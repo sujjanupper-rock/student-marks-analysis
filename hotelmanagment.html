@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Room Management System</title>
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background-color: #1e293b;
+            color: white;
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+        .navbar span { font-size: 0.9rem; color: #94a3b8; }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card h2 {
+            font-size: 1.15rem;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+        input, select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-danger { background: var(--danger); color: white; padding: 0.4rem 0.8rem; width: auto; font-size: 0.8rem; }
+        .btn-danger:hover { background: var(--danger-hover); }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        th { background: #f8fafc; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-available { background: #dcfce7; color: #15803d; }
+        .status-booked { background: #fee2e2; color: #b91c1c; }
+
+        .bill-modal {
+            grid-column: 1 / -1;
+            background: #fffbebf0;
+            border: 1px solid #fef08a;
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .bill-header { display: flex; justify-content: space-between; border-bottom: 1px solid #fde047; padding-bottom: 0.5rem; }
+        .bill-details { margin: 1rem 0; font-size: 0.95rem; }
+        .bill-row { display: flex; justify-content: space-between; margin-bottom: 0.4rem; }
+        .bill-total { font-weight: bold; font-size: 1.2rem; color: #854d0e; border-top: 2px solid #fde047; padding-top: 0.5rem; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1>Grand Deluxe Hotel Management</h1>
+        <span>System Version 2.0 (C-Backend Enabled)</span>
+    </div>
+
+    <div class="container">
+        <!-- Billing Display Area -->
+        <div id="billSection" class="bill-modal">
+            <div class="bill-header">
+                <h3 style="margin:0; color: #854d0e;">Customer Departure Receipt</h3>
+                <span id="billDate"></span>
+            </div>
+            <div class="bill-details" id="billContent">
+                <!-- Receipt details dynamically generated here -->
+            </div>
+        </div>
+
+        <!-- Check-in Form -->
+        <div class="card">
+            <h2>Guest Check-In</h2>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label for="guestName">Guest Full Name</label>
+                    <input type="text" id="guestName" required placeholder="e.g. John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="roomSelect">Select Room</label>
+                    <select id="roomSelect" required>
+                        <!-- Available rooms populated dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="stayDays">Duration (Nights)</label>
+                    <input type="number" id="stayDays" min="1" value="1" required>
+                </div>
+                <button type="submit" class="btn-primary">Confirm Check-In</button>
+            </form>
+        </div>
+
+        <!-- Room Status Table -->
+        <div class="card">
+            <h2>Room Directory & Availability</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Room No</th>
+                        <th>Type</th>
+                        <th>Rate / Night</th>
+                        <th>Status</th>
+                        <th>Current Guest</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="roomTableBody">
+                    <!-- Room Rows populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const rooms = [
+            { id: 101, type: "Single", rate: 1000, booked: false, guest: "", days: 0 },
+            { id: 102, type: "Single", rate: 1000, booked: false, guest: "", days: 0 },
+            { id: 103, type: "Double", rate: 1800, booked: false, guest: "", days: 0 },
+            { id: 104, type: "Double", rate: 1800, booked: false, guest: "", days: 0 },
+            { id: 105, type: "Deluxe Suite", rate: 3500, booked: false, guest: "", days: 0 }
+        ];
+
+        function renderRooms() {
+            const tableBody = document.getElementById('roomTableBody');
+            const roomSelect = document.getElementById('roomSelect');
+            
+            tableBody.innerHTML = '';
+            roomSelect.innerHTML = '<option value="">-- Select Available Room --</option>';
+
+            rooms.forEach(room => {
+                // Render Table Row
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${room.id}</b></td>
+                    <td>${room.type}</td>
+                    <td>&#8377;${room.rate}</td>
+                    <td><span class="badge ${room.booked ? 'status-booked' : 'status-available'}">${room.booked ? 'Occupied' : 'Available'}</span></td>
+                    <td>${room.booked ? `${room.guest} (${room.days} nights)` : '-'}</td>
+                    <td>
+                        ${room.booked ? `<button class="btn-danger" onclick="checkoutRoom(${room.id})">Check-Out</button>` : '-'}
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+
+                // Populate Dropdown
+                if (!room.booked) {
+                    const opt = document.createElement('option');
+                    opt.value = room.id;
+                    opt.textContent = `Room ${room.id} (${room.type} - \u20B9${room.rate}/night)`;
+                    roomSelect.appendChild(opt);
+                }
+            });
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const roomId = parseInt(document.getElementById('roomSelect').value);
+            const guestName = document.getElementById('guestName').value;
+            const days = parseInt(document.getElementById('stayDays').value);
+
+            const room = rooms.find(r => r.id === roomId);
+            if (room) {
+                room.booked = true;
+                room.guest = guestName;
+                room.days = days;
+                renderRooms();
+                this.reset();
+            }
+        });
+
+        function checkoutRoom(roomId) {
+            const room = rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            const roomCharge = room.rate * room.days;
+            const tax = roomCharge * 0.12; // 12% GST
+            const total = roomCharge + tax;
+
+            const billSection = document.getElementById('billSection');
+            const billContent = document.getElementById('billContent');
+            document.getElementById('billDate').textContent = new Date().toLocaleDateString();
+
+            billContent.innerHTML = `
+                <div class="bill-row"><span>Guest Name:</span> <b>${room.guest}</b></div>
+                <div class="bill-row"><span>Room Number:</span> <b>${room.id} (${room.type})</b></div>
+                <div class="bill-row"><span>Duration:</span> <b>${room.days} Night(s)</b></div>
+                <hr style="border:none; border-top:1px dashed #fde047; margin:0.8rem 0;">
+                <div class="bill-row"><span>Room Charges (${room.days} x &#8377;${room.rate}):</span> <span>&#8377;${roomCharge.toFixed(2)}</span></div>
+                <div class="bill-row"><span>GST (12%):</span> <span>&#8377;${tax.toFixed(2)}</span></div>
+                <div class="bill-row bill-total"><span>Grand Total:</span> <span>&#8377;${total.toFixed(2)}</span></div>
+            `;
+
+            billSection.style.display = 'block';
+
+            // Reset Room Status
+            room.booked = false;
+            room.guest = "";
+            room.days = 0;
+
+            renderRooms();
+        }
+
+        renderRooms();
+    </script>
+</body>
+</html>
