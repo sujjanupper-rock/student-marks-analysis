@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeMaster 4 — Learn. Code. Practice. Master.</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ace.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config={darkMode:'class',theme:{extend:{colors:{primary:'#00d4aa','primary-dark':'#00a888',accent:'#fbbf24',surface:{900:'#0b0f19',800:'#111827',700:'#1a2235',600:'#243049'}},fontFamily:{display:['Space Grotesk','sans-serif'],mono:['JetBrains Mono','monospace']}}}}
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#243049 #111827}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#111827}::-webkit-scrollbar-thumb{background:#243049;border-radius:3px}
+body{font-family:'Space Grotesk',sans-serif;background:#0b0f19;color:#e2e8f0;overflow-x:hidden}
+.code-font{font-family:'JetBrains Mono',monospace}
+.sidebar{width:250px;height:100vh;position:fixed;left:0;top:0;background:#111827;border-right:1px solid #1e293b;z-index:40;transition:transform .3s;overflow-y:auto}
+.main-content{margin-left:250px;min-height:100vh;transition:margin .3s}
+.nav-item{display:flex;align-items:center;gap:12px;padding:9px 18px;cursor:pointer;transition:all .2s;border-radius:8px;margin:2px 10px;color:#94a3b8;font-size:13px}
+.nav-item:hover{background:#1a2235;color:#e2e8f0}
+.nav-item.active{background:rgba(0,212,170,.12);color:#00d4aa;border-left:3px solid #00d4aa}
+.nav-item i{width:18px;text-align:center}
+.glow-card{background:#111827;border:1px solid #1e293b;border-radius:14px;transition:all .3s;overflow:hidden}
+.glow-card:hover{border-color:rgba(0,212,170,.4);box-shadow:0 0 25px rgba(0,212,170,.08);transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,#00d4aa,#00a888);color:#0b0f19;font-weight:600;padding:10px 22px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;font-family:inherit;font-size:14px}
+.btn-primary:hover{box-shadow:0 4px 20px rgba(0,212,170,.3);transform:translateY(-1px)}
+.btn-secondary{background:#1a2235;color:#e2e8f0;font-weight:500;padding:10px 22px;border-radius:10px;border:1px solid #243049;cursor:pointer;transition:all .2s;font-family:inherit;font-size:14px}
+.btn-secondary:hover{border-color:#00d4aa;color:#00d4aa}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.progress-bar{height:7px;background:#1a2235;border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;transition:width .8s ease}
+.toast{position:fixed;top:20px;right:20px;z-index:9999;padding:12px 22px;border-radius:10px;color:#fff;font-weight:500;animation:slideIn .4s ease,fadeOut .4s ease 2.6s;pointer-events:none;font-size:13px}
+@keyframes slideIn{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fadeOut{to{opacity:0;transform:translateY(-10px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes xpPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}40%{transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-80%) scale(1)}}
+.streak-fire{animation:pulse 1s ease-in-out infinite}
+.xp-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;font-size:28px;font-weight:700;color:#fbbf24;animation:xpPop 1.5s ease forwards;pointer-events:none}
+.ace_editor{font-family:'JetBrains Mono',monospace!important;font-size:13px!important;border-radius:0 0 12px 12px}
+.editor-toolbar{background:#0b0f19;border-bottom:1px solid #1e293b;padding:8px 14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.lang-tab{padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:all .2s;color:#94a3b8}
+.lang-tab.active{background:#00d4aa;color:#0b0f19}
+.lang-tab:hover:not(.active){color:#e2e8f0}
+.output-panel{background:#0b0f19;border:1px solid #1e293b;border-radius:12px;overflow:hidden}
+.output-header{padding:9px 14px;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600}
+.output-body{padding:14px;max-height:200px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:12px;white-space:pre-wrap}
+.quiz-option{padding:12px 18px;border:1px solid #243049;border-radius:10px;cursor:pointer;transition:all .2s;font-size:14px;display:flex;align-items:center;gap:10px}
+.quiz-option:hover{border-color:#00d4aa;background:rgba(0,212,170,.04)}
+.quiz-option.correct{border-color:#00d4aa;background:rgba(0,212,170,.12);color:#00d4aa}
+.quiz-option.wrong{border-color:#f43f5e;background:rgba(244,63,94,.08);color:#f43f5e}
+.quiz-option.selected{border-color:#fbbf24;background:rgba(251,191,36,.08)}
+.test-case{padding:10px 14px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px}
+.test-case.pass{background:rgba(0,212,170,.08);color:#00d4aa}
+.test-case.fail{background:rgba(244,63,94,.08);color:#f43f5e}
+.search-input{background:#1a2235;border:1px solid #243049;border-radius:10px;padding:9px 14px;color:#e2e8f0;font-family:inherit;font-size:14px;width:100%;outline:none;transition:border .2s}
+.search-input:focus{border-color:#00d4aa}
+.tab-btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;color:#94a3b8;background:transparent;border:none;font-family:inherit}
+.tab-btn.active{background:rgba(0,212,170,.12);color:#00d4aa}
+.tab-btn:hover:not(.active){color:#e2e8f0}
+.achievement-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:18px;text-align:center;transition:all .3s}
+.achievement-card.unlocked{border-color:#fbbf24;box-shadow:0 0 15px rgba(251,191,36,.08)}
+.achievement-card.locked{opacity:.4;filter:grayscale(.8)}
+.mobile-topbar{display:none;position:fixed;top:0;left:0;right:0;height:56px;background:#111827;border-bottom:1px solid #1e293b;z-index:35;padding:0 14px;align-items:center;justify-content:space-between}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:35}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0!important}.mobile-topbar{display:flex!important}}
+.hero-canvas{position:absolute;inset:0;pointer-events:none;opacity:.35}
+</style>
+</head>
+<body>
+
+<div class="mobile-topbar" id="mobileTopbar">
+  <button onclick="toggleSidebar()" class="text-lg text-gray-400 bg-transparent border-none cursor-pointer"><i class="fas fa-bars"></i></button>
+  <span class="font-bold text-primary font-display text-sm">CodeMaster 4</span>
+  <div class="flex items-center gap-2">
+    <span class="text-accent font-bold text-xs code-font" id="mobileXP">0 XP</span>
+    <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-surface-900 font-bold text-xs" id="mobileAvatar">?</div>
+  </div>
+</div>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="p-4 border-b border-surface-600">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-surface-900 font-bold text-base font-display">4</div>
+      <div><div class="font-bold text-white font-display text-sm">CodeMaster 4</div><div class="text-[10px] text-gray-500">Learn. Code. Master.</div></div>
+    </div>
+  </div>
+  <div class="p-2" id="sidebarNav">
+    <div class="text-[10px] uppercase tracking-wider text-gray-600 font-semibold px-4 py-1.5">Main</div>
+    <div class="nav-item active" data-page="home"><i class="fas fa-home"></i>Home</div>
+    <div class="nav-item" data-page="dashboard"><i class="fas fa-th-large"></i>Dashboard</div>
+    <div class="nav-item" data-page="learn"><i class="fas fa-book-open"></i>Learn</div>
+    <div class="text-[10px] uppercase tracking-wider text-gray-600 font-semibold px-4 py-1.5 mt-1">Practice</div>
+    <div class="nav-item" data-page="editor"><i class="fas fa-code"></i>Code Editor</div>
+    <div class="nav-item" data-page="problems"><i class="fas fa-list-check"></i>Problems</div>
+    <div class="nav-item" data-page="daily"><i class="fas fa-fire"></i>Daily Challenge</div>
+    <div class="text-[10px] uppercase tracking-wider text-gray-600 font-semibold px-4 py-1.5 mt-1">Learn More</div>
+    <div class="nav-item" data-page="videos"><i class="fas fa-play-circle"></i>Video Lessons</div>
+    <div class="nav-item" data-page="quiz"><i class="fas fa-brain"></i>Quizzes</div>
+    <div class="nav-item" data-page="interview"><i class="fas fa-briefcase"></i>Interview Prep</div>
+    <div class="text-[10px] uppercase tracking-wider text-gray-600 font-semibold px-4 py-1.5 mt-1">Community</div>
+    <div class="nav-item" data-page="progress"><i class="fas fa-chart-line"></i>Progress</div>
+    <div class="nav-item" data-page="achievements"><i class="fas fa-trophy"></i>Achievements</div>
+    <div class="nav-item" data-page="leaderboard"><i class="fas fa-ranking-star"></i>Leaderboard</div>
+    <div class="text-[10px] uppercase tracking-wider text-gray-600 font-semibold px-4 py-1.5 mt-1">Account</div>
+    <div class="nav-item" data-page="profile"><i class="fas fa-user"></i>Profile</div>
+    <div class="nav-item" data-page="settings"><i class="fas fa-gear"></i>Settings</div>
+  </div>
+  <div class="p-3 border-t border-surface-600 mt-1" id="sidebarUser"></div>
+</aside>
+
+<main class="main-content" id="mainContent">
+  <div class="p-5 md:p-8 max-w-7xl mx-auto" id="pageContainer"></div>
+</main>
+<div id="toastContainer"></div>
+
+<script>
+// ===== LANGUAGE METADATA =====
+const LM = {
+  c:{name:'C',icon:'fa-copyright',color:'#5C6BC0',brand:false},
+  python:{name:'Python',icon:'fa-python',color:'#43A047',brand:true},
+  java:{name:'Java',icon:'fa-java',color:'#F4511E',brand:true},
+  sql:{name:'SQL',icon:'fa-database',color:'#00ACC1',brand:false}
+};
+const MODES={c:'c_cpp',python:'python',java:'java',sql:'sql'};
+
+// ===== LESSON DATA =====
+const LANGS = {
+  c:{
+    levels:[
+      {name:'Beginner',lessons:[
+        {id:'c1',title:'What is C?',desc:'Introduction to C programming language.',code:'// Your first C program\n#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    printf("Welcome to CodeMaster 4!\\n");\n    return 0;\n}',output:'Hello, World!\nWelcome to CodeMaster 4!'},
+        {id:'c2',title:'Variables & Data Types',desc:'int, float, char and how to store data.',code:'#include <stdio.h>\nint main() {\n    int age = 20;\n    float marks = 85.5;\n    char grade = \'A\';\n    printf("Age: %d\\n", age);\n    printf("Marks: %.1f\\n", marks);\n    printf("Grade: %c\\n", grade);\n    return 0;\n}',output:'Age: 20\nMarks: 85.5\nGrade: A'},
+        {id:'c3',title:'Input & Output',desc:'printf() for output and scanf() for input.',code:'#include <stdio.h>\nint main() {\n    int num;\n    printf("Enter a number: ");\n    scanf("%d", &num);\n    printf("You entered: %d\\n", num);\n    return 0;\n}',output:'Enter a number: 5\nYou entered: 5'},
+        {id:'c4',title:'Operators',desc:'Arithmetic, relational, logical operators.',code:'#include <stdio.h>\nint main() {\n    int a = 10, b = 3;\n    printf("Add: %d\\n", a + b);\n    printf("Sub: %d\\n", a - b);\n    printf("Mul: %d\\n", a * b);\n    printf("Div: %d\\n", a / b);\n    printf("Mod: %d\\n", a % b);\n    return 0;\n}',output:'Add: 13\nSub: 7\nMul: 30\nDiv: 3\nMod: 1'},
+        {id:'c5',title:'If-Else Conditions',desc:'Decision making with if, else if, else.',code:'#include <stdio.h>\nint main() {\n    int num = 15;\n    if (num > 0)\n        printf("Positive\\n");\n    else if (num < 0)\n        printf("Negative\\n");\n    else\n        printf("Zero\\n");\n    return 0;\n}',output:'Positive'},
+        {id:'c6',title:'Loops',desc:'for, while, and do-while loops.',code:'#include <stdio.h>\nint main() {\n    printf("For: ");\n    for (int i = 1; i <= 5; i++)\n        printf("%d ", i);\n    printf("\\nWhile: ");\n    int n = 1;\n    while (n <= 5) {\n        printf("%d ", n);\n        n++;\n    }\n    return 0;\n}',output:'For: 1 2 3 4 5 \nWhile: 1 2 3 4 5'},
+        {id:'c7',title:'Arrays',desc:'Store multiple values of the same type.',code:'#include <stdio.h>\nint main() {\n    int arr[5] = {10, 20, 30, 40, 50};\n    for (int i = 0; i < 5; i++)\n        printf("arr[%d] = %d\\n", i, arr[i]);\n    return 0;\n}',output:'arr[0] = 10\narr[1] = 20\narr[2] = 30\narr[3] = 40\narr[4] = 50'},
+        {id:'c8',title:'Functions',desc:'Reusable blocks of code with functions.',code:'#include <stdio.h>\nint add(int a, int b) { return a + b; }\nint factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}\nint main() {\n    printf("5 + 3 = %d\\n", add(5, 3));\n    printf("5! = %d\\n", factorial(5));\n    return 0;\n}',output:'5 + 3 = 8\n5! = 120'},
+        {id:'c9',title:'Pointers',desc:'Memory addresses and pointer variables.',code:'#include <stdio.h>\nint main() {\n    int x = 42;\n    int *ptr = &x;\n    printf("Value of x: %d\\n", x);\n    printf("Address: %p\\n", (void*)ptr);\n    printf("Via pointer: %d\\n", *ptr);\n    *ptr = 100;\n    printf("After change: %d\\n", x);\n    return 0;\n}',output:'Value of x: 42\nAddress: 0x7ffd...\nVia pointer: 42\nAfter change: 100'},
+        {id:'c10',title:'Structures',desc:'Group different data types with structs.',code:'#include <stdio.h>\nstruct Student {\n    char name[50];\n    int age;\n    float marks;\n};\nint main() {\n    struct Student s = {"Alice", 20, 92.5};\n    printf("Name: %s\\n", s.name);\n    printf("Age: %d\\n", s.age);\n    printf("Marks: %.1f\\n", s.marks);\n    return 0;\n}',output:'Name: Alice\nAge: 20\nMarks: 92.5'}
+      ]},
+      {name:'Intermediate',lessons:[
+        {id:'c11',title:'String Handling',desc:'Character arrays and string functions.',code:'#include <stdio.h>\n#include <string.h>\nint main() {\n    char s[50] = "Hello";\n    printf("Length: %lu\\n", strlen(s));\n    strcat(s, " World");\n    printf("Concat: %s\\n", s);\n    return 0;\n}',output:'Length: 5\nConcat: Hello World'},
+        {id:'c12',title:'2D Arrays',desc:'Two-dimensional arrays and matrices.',code:'#include <stdio.h>\nint main() {\n    int mat[2][3] = {{1,2,3},{4,5,6}};\n    for(int i=0;i<2;i++){\n        for(int j=0;j<3;j++)\n            printf("%d ",mat[i][j]);\n        printf("\\n");\n    }\n    return 0;\n}',output:'1 2 3 \n4 5 6 '}
+      ]},
+      {name:'Advanced',lessons:[
+        {id:'c13',title:'Dynamic Memory',desc:'malloc, calloc, realloc, free.',code:'#include <stdio.h>\n#include <stdlib.h>\nint main() {\n    int *arr = malloc(5 * sizeof(int));\n    for(int i=0;i<5;i++) arr[i]=(i+1)*10;\n    for(int i=0;i<5;i++)\n        printf("arr[%d] = %d\\n",i,arr[i]);\n    free(arr);\n    return 0;\n}',output:'arr[0] = 10\narr[1] = 20\narr[2] = 30\narr[3] = 40\narr[4] = 50'},
+        {id:'c14',title:'Linked Lists',desc:'Create and traverse a linked list.',code:'#include <stdio.h>\n#include <stdlib.h>\nstruct Node { int data; struct Node* next; };\nint main() {\n    struct Node* head = malloc(sizeof(struct Node));\n    head->data = 10;\n    head->next = malloc(sizeof(struct Node));\n    head->next->data = 20;\n    head->next->next = NULL;\n    struct Node* c = head;\n    while(c) { printf("%d -> ",c->data); c=c->next; }\n    printf("NULL\\n");\n    return 0;\n}',output:'10 -> 20 -> NULL'}
+      ]}
+    ]
+  },
+  python:{
+    levels:[
+      {name:'Beginner',lessons:[
+        {id:'p1',title:'Introduction to Python',desc:'Write your first Python program.',code:'# Your first Python program\nprint("Hello, World!")\nprint("Welcome to CodeMaster 4!")',output:'Hello, World!\nWelcome to CodeMaster 4!'},
+        {id:'p2',title:'Variables & Data Types',desc:'int, float, string, bool.',code:'name = "Alice"\nage = 20\nheight = 5.6\nis_student = True\nprint(f"Name: {name}, Type: {type(name).__name__}")\nprint(f"Age: {age}, Type: {type(age).__name__}")\nprint(f"Height: {height}, Type: {type(height).__name__}")',output:'Name: Alice, Type: str\nAge: 20, Type: int\nHeight: 5.6, Type: float'},
+        {id:'p3',title:'Input & Output',desc:'input() and f-strings.',code:'name = input("Enter name: ")\nage = int(input("Enter age: "))\nprint(f"Hello {name}, you are {age}!")',output:'Enter name: Bob\nEnter age: 25\nHello Bob, you are 25!'},
+        {id:'p4',title:'Operators',desc:'Arithmetic, comparison, logical.',code:'a, b = 15, 4\nprint(f"Add: {a+b}")\nprint(f"Div: {a/b}")\nprint(f"Floor: {a//b}")\nprint(f"Mod: {a%b}")\nprint(f"Power: {a**b}")\nprint(f"Equal: {a==b}")',output:'Add: 19\nDiv: 3.75\nFloor: 3\nMod: 3\nPower: 50625\nEqual: False'},
+        {id:'p5',title:'Conditions',desc:'if, elif, else.',code:'score = 85\nif score >= 90:\n    grade = "A+"\nelif score >= 80:\n    grade = "A"\nelse:\n    grade = "B"\nprint(f"Score: {score}, Grade: {grade}")',output:'Score: 85, Grade: A'},
+        {id:'p6',title:'Loops',desc:'for and while loops.',code:'print("For loop:")\nfor i in range(1, 6):\n    print(f"  {i}", end=" ")\nprint()\nprint("While loop:")\nn = 1\nwhile n <= 5:\n    print(f"  {n}", end=" ")\n    n += 1\nprint()',output:'For loop:\n  1   2   3   4   5 \nWhile loop:\n  1   2   3   4   5'},
+        {id:'p7',title:'Strings',desc:'Operations, slicing, methods.',code:'s = "Hello, Python!"\nprint(f"Length: {len(s)}")\nprint(f"Upper: {s.upper()}")\nprint(f"Slice: {s[0:5]}")\nprint(f"Reverse: {s[::-1]}")',output:'Length: 14\nUpper: HELLO, PYTHON!\nSlice: Hello\nReverse: !nohtyP ,olleH'},
+        {id:'p8',title:'Lists',desc:'Create, modify, iterate lists.',code:'nums = [10, 20, 30, 40, 50]\nnums.append(60)\nprint(f"List: {nums}")\nprint(f"First: {nums[0]}")\nprint(f"Last: {nums[-1]}")\nprint(f"Sum: {sum(nums)}")\nprint(f"Max: {max(nums)}")',output:'List: [10, 20, 30, 40, 50, 60]\nFirst: 10\nLast: 60\nSum: 210\nMax: 60'},
+        {id:'p9',title:'Dictionaries',desc:'Key-value pairs.',code:'student = {"name":"Alice","age":20,"grade":"A"}\nprint(f"Name: {student[\'name\']}")\nstudent["city"] = "NYC"\nfor k,v in student.items():\n    print(f"  {k}: {v}")',output:'Name: Alice\n  name: Alice\n  age: 20\n  grade: A\n  city: NYC'},
+        {id:'p10',title:'Functions',desc:'Define and call functions.',code:'def greet(name):\n    return f"Hello, {name}!"\n\ndef factorial(n):\n    if n <= 1: return 1\n    return n * factorial(n-1)\n\nprint(greet("Alice"))\nprint(f"5! = {factorial(5)}")',output:'Hello, Alice!\n5! = 120'}
+      ]},
+      {name:'Intermediate',lessons:[
+        {id:'p11',title:'List Comprehensions',desc:'Concise list creation.',code:'squares = [x**2 for x in range(1,11)]\nprint(f"Squares: {squares}")\nevens = [x for x in range(1,21) if x%2==0]\nprint(f"Evens: {evens}")',output:'Squares: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]\nEvens: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]'},
+        {id:'p12',title:'Exception Handling',desc:'try, except, finally.',code:'def safe_div(a, b):\n    try:\n        return f"{a}/{b} = {a/b}"\n    except ZeroDivisionError:\n        return "Cannot divide by zero!"\n\nprint(safe_div(10, 3))\nprint(safe_div(10, 0))',output:'10/3 = 3.3333333333333335\nCannot divide by zero!'}
+      ]},
+      {name:'OOP',lessons:[
+        {id:'p13',title:'Classes & Objects',desc:'Create classes and objects.',code:'class Student:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def greet(self):\n        return f"Hi, I am {self.name}, age {self.age}"\n\ns = Student("Alice", 20)\nprint(s.greet())',output:'Hi, I am Alice, age 20'},
+        {id:'p14',title:'Inheritance',desc:'Parent and child classes.',code:'class Animal:\n    def __init__(self, name): self.name = name\n    def speak(self): return "Sound"\n\nclass Dog(Animal):\n    def speak(self): return f"{self.name} says Woof!"\n\nclass Cat(Animal):\n    def speak(self): return f"{self.name} says Meow!"\n\nfor a in [Dog("Buddy"), Cat("Whiskers")]:\n    print(a.speak())',output:'Buddy says Woof!\nWhiskers says Meow!'}
+      ]},
+      {name:'Advanced',lessons:[
+        {id:'p15',title:'Decorators',desc:'Modify function behavior.',code:'def timer(func):\n    import time\n    def wrapper(*a,**kw):\n        s=time.time()\n        r=func(*a,**kw)\n        print(f"{func.__name__}: {time.time()-s:.4f}s")\n        return r\n    return wrapper\n\n@timer\ndef slow(n): return sum(range(n))\n\nprint(f"Result: {slow(1000000)}")',output:'slow: 0.0321s\nResult: 499999500000'},
+        {id:'p16',title:'Generators',desc:'Yield and lazy evaluation.',code:'def fib(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a+b\n\nprint("First 10:")\nfor x in fib(10): print(x, end=" ")\nprint()',output:'First 10:\n0 1 1 2 3 5 8 13 21 34'}
+      ]}
+    ]
+  },
+  java:{
+    levels:[
+      {name:'Beginner',lessons:[
+        {id:'j1',title:'Introduction to Java',desc:'JDK, JRE, JVM and first program.',code:'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n        System.out.println("Welcome to CodeMaster 4!");\n    }\n}',output:'Hello, World!\nWelcome to CodeMaster 4!'},
+        {id:'j2',title:'Variables & Data Types',desc:'int, double, char, boolean.',code:'public class Main {\n    public static void main(String[] args) {\n        int age = 20;\n        double price = 99.99;\n        String name = "Alice";\n        System.out.println("Name: " + name);\n        System.out.println("Age: " + age);\n        System.out.println("Price: " + price);\n    }\n}',output:'Name: Alice\nAge: 20\nPrice: 99.99'},
+        {id:'j3',title:'Conditions & Loops',desc:'if-else, for, while.',code:'public class Main {\n    public static void main(String[] args) {\n        System.out.print("For: ");\n        for (int i=1; i<=5; i++) System.out.print(i+" ");\n        System.out.println();\n        int score = 85;\n        if (score>=90) System.out.println("A+");\n        else if (score>=80) System.out.println("A");\n        else System.out.println("B");\n    }\n}',output:'For: 1 2 3 4 5 \nA'},
+        {id:'j4',title:'Arrays',desc:'Single dimensional arrays.',code:'public class Main {\n    public static void main(String[] args) {\n        int[] arr = {10,20,30,40,50};\n        int sum = 0;\n        for (int i=0; i<arr.length; i++) {\n            System.out.println("arr["+i+"] = "+arr[i]);\n            sum += arr[i];\n        }\n        System.out.println("Sum: "+sum);\n    }\n}',output:'arr[0] = 10\narr[1] = 20\narr[2] = 30\narr[3] = 40\narr[4] = 50\nSum: 150'},
+        {id:'j5',title:'Methods',desc:'Define and call methods.',code:'public class Main {\n    static int factorial(int n) {\n        if (n<=1) return 1;\n        return n * factorial(n-1);\n    }\n    public static void main(String[] args) {\n        System.out.println("5! = " + factorial(5));\n    }\n}',output:'5! = 120'}
+      ]},
+      {name:'OOP',lessons:[
+        {id:'j6',title:'Classes & Objects',desc:'Constructors and methods.',code:'class Student {\n    String name;\n    int age;\n    Student(String n, int a) { name=n; age=a; }\n    String info() { return name+" ("+age+")"; }\n}\npublic class Main {\n    public static void main(String[] args) {\n        Student s = new Student("Alice", 20);\n        System.out.println(s.info());\n    }\n}',output:'Alice (20)'},
+        {id:'j7',title:'Inheritance',desc:'Extending classes.',code:'class Animal { void speak() { System.out.println("Sound"); } }\nclass Dog extends Animal { void speak() { System.out.println("Woof!"); } }\npublic class Main {\n    public static void main(String[] args) {\n        Dog d = new Dog();\n        d.speak();\n    }\n}',output:'Woof!'}
+      ]},
+      {name:'Advanced',lessons:[
+        {id:'j8',title:'Exception Handling',desc:'try-catch-finally.',code:'public class Main {\n    static String divide(int a, int b) {\n        try { return a+"/"+b+" = "+(a/(double)b); }\n        catch (ArithmeticException e) { return "Error: /0"; }\n    }\n    public static void main(String[] args) {\n        System.out.println(divide(10,3));\n        System.out.println(divide(10,0));\n    }\n}',output:'10/3 = 3.3333333333333335\nError: /0'},
+        {id:'j9',title:'Collections',desc:'ArrayList, HashMap.',code:'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        List<String> list = new ArrayList<>();\n        list.add("Java"); list.add("Python");\n        System.out.println("List: " + list);\n        Map<String,Integer> map = new HashMap<>();\n        map.put("Alice",90);\n        System.out.println("Map: " + map);\n    }\n}',output:'List: [Java, Python]\nMap: {Alice=90}'}
+      ]}
+    ]
+  },
+  sql:{
+    levels:[
+      {name:'Beginner',lessons:[
+        {id:'s1',title:'What is SQL?',desc:'Introduction to databases.',code:'SELECT "SQL is awesome!" AS message;',output:'message\nSQL is awesome!'},
+        {id:'s2',title:'CREATE & INSERT',desc:'Create tables and insert data.',code:'CREATE TABLE students (\n  id INTEGER PRIMARY KEY,\n  name TEXT NOT NULL,\n  age INTEGER,\n  grade TEXT\n);\nINSERT INTO students VALUES (1, \'Alice\', 20, \'A\');\nINSERT INTO students VALUES (2, \'Bob\', 21, \'B\');\nINSERT INTO students VALUES (3, \'Carol\', 20, \'A\');\nSELECT * FROM students;',output:'id  name   age  grade\n1   Alice  20   A\n2   Bob    21   B\n3   Carol  20   A'},
+        {id:'s3',title:'SELECT Queries',desc:'Retrieve data with SELECT.',code:'CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, category TEXT, price REAL);\nINSERT INTO products VALUES (1,\'Laptop\',\'Electronics\',999.99);\nINSERT INTO products VALUES (2,\'Phone\',\'Electronics\',699.99);\nINSERT INTO products VALUES (3,\'Shirt\',\'Clothing\',29.99);\nSELECT name, price FROM products WHERE price > 100;',output:'name    price\nLaptop  999.99\nPhone   699.99'},
+        {id:'s4',title:'WHERE Clause',desc:'Filter rows with WHERE.',code:'CREATE TABLE emp (id INTEGER PRIMARY KEY, name TEXT, dept TEXT, salary REAL);\nINSERT INTO emp VALUES (1,\'Alice\',\'Eng\',90000);\nINSERT INTO emp VALUES (2,\'Bob\',\'Mkt\',60000);\nINSERT INTO emp VALUES (3,\'Carol\',\'Eng\',95000);\nSELECT * FROM emp WHERE salary > 70000;',output:'id  name   dept  salary\n1   Alice  Eng   90000\n3   Carol  Eng   95000'},
+        {id:'s5',title:'ORDER BY & GROUP BY',desc:'Sort and group data.',code:'CREATE TABLE sales (id INTEGER PRIMARY KEY, product TEXT, category TEXT, amount REAL);\nINSERT INTO sales VALUES (1,\'Laptop\',\'Electronics\',5000);\nINSERT INTO sales VALUES (2,\'Shirt\',\'Clothing\',500);\nINSERT INTO sales VALUES (3,\'Phone\',\'Electronics\',3000);\nSELECT category, SUM(amount) AS total FROM sales GROUP BY category;',output:'category     total\nClothing     500\nElectronics  8000'}
+      ]},
+      {name:'Intermediate',lessons:[
+        {id:'s6',title:'JOINs',desc:'Combine tables with JOINs.',code:'CREATE TABLE cust (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE ord (id INTEGER PRIMARY KEY, cust_id INTEGER, amount REAL);\nINSERT INTO cust VALUES (1,\'Alice\');\nINSERT INTO cust VALUES (2,\'Bob\');\nINSERT INTO cust VALUES (3,\'Carol\');\nINSERT INTO ord VALUES (1,1,500);\nINSERT INTO ord VALUES (2,1,300);\nINSERT INTO ord VALUES (3,2,700);\nSELECT c.name, COALESCE(SUM(o.amount),0) AS total\nFROM cust c LEFT JOIN ord o ON c.id=o.cust_id\nGROUP BY c.name;',output:'name   total\nAlice  800\nBob    700\nCarol  0'},
+        {id:'s7',title:'Subqueries',desc:'Queries inside queries.',code:'CREATE TABLE emp (id INTEGER PRIMARY KEY, name TEXT, dept TEXT, salary REAL);\nINSERT INTO emp VALUES (1,\'Alice\',\'Eng\',90000);\nINSERT INTO emp VALUES (2,\'Bob\',\'Mkt\',60000);\nINSERT INTO emp VALUES (3,\'Carol\',\'Eng\',95000);\nSELECT name, salary FROM emp\nWHERE salary > (SELECT AVG(salary) FROM emp);',output:'name   salary\nAlice  90000\nCarol  95000'}
+      ]},
+      {name:'Advanced',lessons:[
+        {id:'s8',title:'Views & Indexes',desc:'Virtual tables and performance.',code:'CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, price REAL);\nINSERT INTO products VALUES (1,\'Laptop\',999);\nINSERT INTO products VALUES (2,\'Phone\',699);\nINSERT INTO products VALUES (3,\'Tablet\',449);\nCREATE VIEW expensive AS SELECT name, price FROM products WHERE price > 500;\nSELECT * FROM expensive;',output:'name    price\nLaptop  999\nPhone   699'},
+        {id:'s9',title:'Transactions',desc:'BEGIN, COMMIT, ROLLBACK.',code:'CREATE TABLE accounts (id INTEGER PRIMARY KEY, name TEXT, balance REAL);\nINSERT INTO accounts VALUES (1,\'Alice\',1000);\nINSERT INTO accounts VALUES (2,\'Bob\',500);\nBEGIN TRANSACTION;\nUPDATE accounts SET balance = balance - 200 WHERE name = \'Alice\';\nUPDATE accounts SET balance = balance + 200 WHERE name = \'Bob\';\nCOMMIT;\nSELECT * FROM accounts;',output:'id  name   balance\n1   Alice  800\n2   Bob    700'}
+      ]}
+    ]
+  }
+};
+
+// ===== PROBLEMS =====
+const PROBLEMS = {
+  python:[
+    {id:'pp1',title:'Even or Odd',diff:'Easy',cat:'Basics',desc:'Check if a number is even or odd.',tpl:'num = int(input())\n# Your code here\n',tc:[{i:'4',o:'Even'},{i:'7',o:'Odd'},{i:'0',o:'Even'}],xp:10},
+    {id:'pp2',title:'Factorial',diff:'Easy',cat:'Functions',desc:'Calculate factorial using recursion.',tpl:'def factorial(n):\n    # Your code here\n    pass\n\nn = int(input())\nprint(factorial(n))',tc:[{i:'5',o:'120'},{i:'0',o:'1'},{i:'7',o:'5040'}],xp:20},
+    {id:'pp3',title:'Fibonacci Series',diff:'Easy',cat:'Loops',desc:'Generate first N Fibonacci numbers.',tpl:'n = int(input())\n# Print first n Fibonacci numbers\n',tc:[{i:'8',o:'0 1 1 2 3 5 8 13'},{i:'5',o:'0 1 1 2 3'}],xp:15},
+    {id:'pp4',title:'Reverse String',diff:'Easy',cat:'Strings',desc:'Reverse a string.',tpl:'s = input()\n# Reverse and print\n',tc:[{i:'hello',o:'olleh'},{i:'Python',o:'nohtyP'}],xp:15},
+    {id:'pp5',title:'Prime Numbers',diff:'Medium',cat:'Loops',desc:'Print primes from 1 to N.',tpl:'n = int(input())\n# Print all primes from 1 to n\n',tc:[{i:'20',o:'2 3 5 7 11 13 17 19'},{i:'10',o:'2 3 5 7'}],xp:30}
+  ],
+  c:[
+    {id:'cp1',title:'Even or Odd',diff:'Easy',cat:'Basics',desc:'Check if a number is even or odd.',tpl:'#include <stdio.h>\nint main() {\n    int num;\n    scanf("%d", &num);\n    // Your code here\n    return 0;\n}',tc:[{i:'4',o:'Even'},{i:'7',o:'Odd'}],xp:10},
+    {id:'cp2',title:'Factorial',diff:'Easy',cat:'Functions',desc:'Factorial using recursion.',tpl:'#include <stdio.h>\nint factorial(int n) {\n    // Your code here\n}\nint main() {\n    int n; scanf("%d",&n);\n    printf("%d\\n", factorial(n));\n    return 0;\n}',tc:[{i:'5',o:'120'},{i:'0',o:'1'}],xp:20},
+    {id:'cp3',title:'Bubble Sort',diff:'Medium',cat:'Algorithms',desc:'Sort an array ascending.',tpl:'#include <stdio.h>\nvoid sort(int a[], int n) {\n    // Your code here\n}\nint main() {\n    int arr[]={64,34,25,12,22,11,90};\n    int n=7; sort(arr,n);\n    for(int i=0;i<n;i++) printf("%d ",arr[i]);\n    return 0;\n}',tc:[{i:'',o:'11 12 22 25 34 64 90'}],xp:35}
+  ],
+  java:[
+    {id:'jp1',title:'Even or Odd',diff:'Easy',cat:'Basics',desc:'Check even or odd.',tpl:'import java.util.Scanner;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int num = sc.nextInt();\n        // Your code here\n    }\n}',tc:[{i:'4',o:'Even'},{i:'7',o:'Odd'}],xp:10},
+    {id:'jp2',title:'Factorial',diff:'Easy',cat:'Methods',desc:'Factorial using recursion.',tpl:'public class Main {\n    static int factorial(int n) {\n        // Your code here\n    }\n    public static void main(String[] args) {\n        System.out.println(factorial(5));\n    }\n}',tc:[{i:'',o:'120'}],xp:20}
+  ],
+  sql:[
+    {id:'sp1',title:'Basic SELECT',diff:'Easy',cat:'Basics',desc:'Select students with grade A.',tpl:'-- students(id, name, age, grade)\n-- Write your query\n',setup:'CREATE TABLE students(id INTEGER PRIMARY KEY,name TEXT,age INTEGER,grade TEXT);INSERT INTO students VALUES(1,\'Alice\',20,\'A\');INSERT INTO students VALUES(2,\'Bob\',21,\'B\');INSERT INTO students VALUES(3,\'Carol\',20,\'A\');',tc:[{i:'',o:'1\tAlice\t20\tA\n3\tCarol\t20\tA'}],xp:10},
+    {id:'sp2',title:'Aggregate Functions',diff:'Easy',cat:'Aggregation',desc:'Average salary per department.',tpl:'-- employees(id, name, dept, salary)\n',setup:'CREATE TABLE employees(id INTEGER PRIMARY KEY,name TEXT,dept TEXT,salary REAL);INSERT INTO employees VALUES(1,\'Alice\',\'Eng\',90000);INSERT INTO employees VALUES(2,\'Bob\',\'Mkt\',60000);INSERT INTO employees VALUES(3,\'Carol\',\'Eng\',95000);',tc:[{i:'',o:'Eng\t92500\nMkt\t60000'}],xp:15},
+    {id:'sp3',title:'JOIN Query',diff:'Medium',cat:'Joins',desc:'Customers with total order amounts.',tpl:'-- customers(id, name), orders(id, customer_id, amount)\n',setup:'CREATE TABLE customers(id INTEGER PRIMARY KEY,name TEXT);CREATE TABLE orders(id INTEGER PRIMARY KEY,customer_id INTEGER,amount REAL);INSERT INTO customers VALUES(1,\'Alice\');INSERT INTO customers VALUES(2,\'Bob\');INSERT INTO customers VALUES(3,\'Carol\');INSERT INTO orders VALUES(1,1,500);INSERT INTO orders VALUES(2,1,300);INSERT INTO orders VALUES(3,2,700);',tc:[{i:'',o:'Alice\t800\nBob\t700\nCarol\t0'}],xp:25}
+  ]
+};
+
+// ===== QUIZZES =====
+const QUIZZES = {
+  c:[
+    {id:'cq1',topic:'Variables',qs:[
+      {q:'Correct way to declare int in C?',o:['int x;','integer x;','var x;','num x;'],a:0,ex:'"int" is the keyword for integers in C.'},
+      {q:'What does printf("%d", 5/2) print?',o:['2','2.5','2.0','Error'],a:0,ex:'Integer division truncates decimals.'},
+      {q:'Which stores a single character?',o:['string','char','text','character'],a:1,ex:'"char" stores single characters.'},
+      {q:'Typical size of int?',o:['2 bytes','4 bytes','8 bytes','1 byte'],a:1,ex:'int is typically 4 bytes on modern systems.'}
+    ]},
+    {id:'cq2',topic:'Loops',qs:[
+      {q:'How many times: for(int i=0;i<5;i++)?',o:['4','5','6','Infinite'],a:1,ex:'i goes 0,1,2,3,4 = 5 times.'},
+      {q:'What does break do?',o:['Skip iteration','Exit loop','Restart loop','Pause loop'],a:1,ex:'break exits the loop immediately.'}
+    ]}
+  ],
+  python:[
+    {id:'pq1',topic:'Basics',qs:[
+      {q:'What is type(10)?',o:["<class 'int'>","<class 'float'>",'int','number'],a:0,ex:'10 is an integer, so type returns int class.'},
+      {q:'Which gets user input in Python 3?',o:['input()','scanf()','read()','get()'],a:0,ex:'Python 3 uses input() for user input.'},
+      {q:'What does len("Hello") return?',o:['4','5','6','Error'],a:1,ex:'"Hello" has 5 characters.'},
+      {q:'What is 2**3?',o:['6','8','5','9'],a:1,ex:'** is exponentiation. 2^3=8.'}
+    ]},
+    {id:'pq2',topic:'Lists',qs:[
+      {q:'Index of last element in list of 5?',o:['5','4','0','-1'],a:3,ex:'-1 refers to last element in Python.'},
+      {q:'Which adds to end of list?',o:['add()','insert()','append()','push()'],a:2,ex:'append() adds to the end.'}
+    ]}
+  ],
+  java:[
+    {id:'jq1',topic:'Basics',qs:[
+      {q:'Entry point of Java program?',o:['start()','main()','init()','run()'],a:1,ex:'Execution starts from main() method.'},
+      {q:'Keyword to create a class?',o:['struct','class','type','object'],a:1,ex:'"class" defines a class in Java.'},
+      {q:'Default value of int?',o:['0','1','null','undefined'],a:0,ex:'Primitive int defaults to 0.'}
+    ]}
+  ],
+  sql:[
+    {id:'sq1',topic:'Basics',qs:[
+      {q:'Command to retrieve data?',o:['GET','FETCH','SELECT','RETRIEVE'],a:2,ex:'SELECT retrieves data from tables.'},
+      {q:'Which clause filters rows?',o:['ORDER BY','GROUP BY','WHERE','HAVING'],a:2,ex:'WHERE filters rows based on conditions.'},
+      {q:'What does DISTINCT do?',o:['Sorts','Removes duplicates','Limits','Joins'],a:1,ex:'DISTINCT eliminates duplicate rows.'},
+      {q:'Returns all rows from both tables?',o:['INNER JOIN','LEFT JOIN','RIGHT JOIN','FULL JOIN'],a:3,ex:'FULL JOIN returns all rows from both tables.'}
+    ]}
+  ]
+};
+
+// ===== VIDEOS =====
+const VIDEOS = {
+  c:[{t:'C Full Course for Beginners',d:'2:15:00',u:'https://www.youtube.com/embed/87SH2Cn0s9A'},{t:'Variables and Data Types',d:'18:30',u:'https://www.youtube.com/embed/KJgsSFOSQv0'},{t:'Loops in C',d:'22:00',u:'https://www.youtube.com/embed/RBSGKlAvoiM'},{t:'Pointers Guide',d:'35:00',u:'https://www.youtube.com/embed/z7VRGl3BhBM'}],
+  python:[{t:'Python Full Course',d:'4:26:00',u:'https://www.youtube.com/embed/rfscVS0vtbw'},{t:'Variables and Types',d:'15:00',u:'https://www.youtube.com/embed/R2S4GK4L0c0'},{t:'Functions Explained',d:'20:00',u:'https://www.youtube.com/embed/9Os0o3w2Sro'},{t:'OOP Crash Course',d:'30:00',u:'https://www.youtube.com/embed/ZDa-Z5JzLYM'}],
+  java:[{t:'Java Full Course',d:'3:30:00',u:'https://www.youtube.com/embed/A74TOX803D0'},{t:'OOP in Java',d:'28:00',u:'https://www.youtube.com/embed/pTB0Ei6dwG0'},{t:'Collections Framework',d:'32:00',u:'https://www.youtube.com/embed/PbYmGiWtu1s'},{t:'Exception Handling',d:'18:00',u:'https://www.youtube.com/embed/BxRcTbM9Mqo'}],
+  sql:[{t:'SQL Full Course',d:'3:00:00',u:'https://www.youtube.com/embed/HXV3zeQKqGY'},{t:'SELECT Queries',d:'16:00',u:'https://www.youtube.com/embed/7JNp7H4gSBk'},{t:'JOINs Explained',d:'24:00',u:'https://www.youtube.com/embed/WBKxPliie2c'},{t:'Subqueries',d:'20:00',u:'https://www.youtube.com/embed/4XVtYo-pgC8'}]
+};
+
+// ===== ACHIEVEMENTS =====
+const ACHS = [
+  {id:'first-login',t:'First Steps',d:'Log in for the first time',i:'fa-door-open',xp:10},
+  {id:'first-code',t:'Hello Code!',d:'Run your first program',i:'fa-play',xp:20},
+  {id:'first-quiz',t:'Quiz Starter',d:'Complete a quiz',i:'fa-brain',xp:25},
+  {id:'first-prob',t:'Problem Solver',d:'Solve a problem',i:'fa-check-circle',xp:30},
+  {id:'streak7',t:'On Fire!',d:'7-day streak',i:'fa-fire',xp:50},
+  {id:'prob10',t:'10 Down',d:'Solve 10 problems',i:'fa-list-check',xp:50},
+  {id:'c-beg',t:'C Beginner',d:'Complete C beginner lessons',i:'fa-copyright',xp:100},
+  {id:'py-beg',t:'Python Beginner',d:'Complete Python beginner lessons',i:'fa-python',xp:100},
+  {id:'java-beg',t:'Java Beginner',d:'Complete Java beginner lessons',i:'fa-java',xp:100},
+  {id:'sql-beg',t:'SQL Beginner',d:'Complete SQL beginner lessons',i:'fa-database',xp:100},
+  {id:'xp500',t:'Rising Star',d:'Earn 500 XP',i:'fa-star',xp:0},
+  {id:'xp2000',t:'Code Warrior',d:'Earn 2000 XP',i:'fa-shield',xp:0}
+];
+
+const LEADERBOARD = [
+  {n:'Alex Chen',xp:4520,l:6,s:15},{n:'Sarah Kim',xp:3890,l:5,s:22},{n:'Raj Patel',xp:3200,l:5,s:8},
+  {n:'Emma Wilson',xp:2850,l:4,s:12},{n:'Yuki Tanaka',xp:2400,l:4,s:5},{n:'Carlos Rivera',xp:2100,l:3,s:30},
+  {n:'Mia Johnson',xp:1800,l:3,s:3},{n:'Liam OBrien',xp:1500,l:3,s:7},{n:'Fatima Ahmed',xp:1200,l:2,s:10},{n:'Noah Lee',xp:900,l:2,s:2}
+];
+
+const DAILY = [
+  {lang:'python',t:'Check Prime',d:'Check if a number is prime.',diff:'Easy',xp:20,tpl:'def is_prime(n):\n    # Your code\n    pass\n\nn = int(input())\nprint(is_prime(n))',tc:[{i:'17',o:'True'},{i:'10',o:'False'},{i:'2',o:'True'},{i:'1',o:'False'}]},
+  {lang:'c',t:'Sum of Digits',d:'Sum of digits of a number.',diff:'Easy',xp:15,tpl:'#include <stdio.h>\nint main() {\n    int n,sum=0; scanf("%d",&n);\n    // Your code\n    printf("%d\\n",sum);\n    return 0;\n}',tc:[{i:'123',o:'6'},{i:'999',o:'27'}]},
+  {lang:'sql',t:'Highest Salary',d:'Find employee with highest salary.',diff:'Medium',xp:25,tpl:'-- employees(id, name, dept, salary)\n',setup:'CREATE TABLE employees(id INTEGER PRIMARY KEY,name TEXT,dept TEXT,salary REAL);INSERT INTO employees VALUES(1,\'Alice\',\'Eng\',90000);INSERT INTO employees VALUES(2,\'Bob\',\'Mkt\',60000);INSERT INTO employees VALUES(3,\'Carol\',\'Eng\',95000);',tc:[{i:'',o:'Carol\t95000'}]}
+];
+
+// ===== STATE =====
+let S = {user:null,page:'home',lang:'python',editorLang:'python',done:[],solved:[],quizScores:{},xp:0,streak:0,lastLogin:null,achs:[]};
+function load(){try{const s=localStorage.getItem('cm4');if(s)S={...S,...JSON.parse(s)}}catch(e){}}
+function save(){try{localStorage.setItem('cm4',JSON.stringify(S))}catch(e){}}
+
+// ===== UTILS =====
+function toast(m,t='success'){
+  const c={success:'background:linear-gradient(135deg,#00d4aa,#00a888)',error:'background:linear-gradient(135deg,#f43f5e,#e11d48)',info:'background:linear-gradient(135deg,#3b82f6,#2563eb)',warning:'background:linear-gradient(135deg,#f59e0b,#d97706)'};
+  const el=document.createElement('div');el.className='toast';el.style.cssText=c[t]||c.success;el.textContent=m;
+  document.getElementById('toastContainer').appendChild(el);setTimeout(()=>el.remove(),3000);
+}
+function xpPop(a){const el=document.createElement('div');el.className='xp-popup code-font';el.textContent=`+${a} XP`;document.body.appendChild(el);setTimeout(()=>el.remove(),1500);}
+function addXP(a){S.xp+=a;save();xpPop(a);updateSidebarUser();checkAch();}
+function getLvl(){const x=S.xp;if(x>=5000)return 7;if(x>=3000)return 6;if(x>=2000)return 5;if(x>=1000)return 4;if(x>=500)return 3;if(x>=100)return 2;return 1;}
+function getLvlName(l){return['','Absolute Beginner','Beginner','Basic Programmer','Intermediate','Advanced','Problem Solver','Interview Ready'][l]||'';}
+function diffColor(d){return{Easy:'#00d4aa',Medium:'#fbbf24',Hard:'#f43f5e',Expert:'#a855f7'}[d]||'#94a3b8';}
+function diffIcon(d){return{Easy:'🟢',Medium:'🟡',Hard:'🔴',Expert:'🟣'}[d]||'⚪';}
+function allLessons(k){return(LANGS[k]||{levels:[]}).levels.flatMap(l=>l.lessons);}
+function langProg(k){const t=allLessons(k).length;return t?Math.round(allLessons(k).filter(l=>S.done.includes(l.id)).length/t*100):0;}
+function nextLesson(k){return allLessons(k).find(l=>!S.done.includes(l.id));}
+function findLesson(id){for(const[k,lang]of Object.entries(LANGS))for(const lv of lang.levels)for(const l of lv.lessons)if(l.id===id)return{...l,lang:k,level:lv.name};return null;}
+function findProblem(id){for(const[k,ps]of Object.entries(PROBLEMS))for(const p of ps)if(p.id===id)return{...p,lang:k};return null;}
+function updateStreak(){const td=new Date().toDateString();if(S.lastLogin!==td){const yd=new Date(Date.now()-864e5).toDateString();S.streak=S.lastLogin===yd?S.streak+1:1;S.lastLogin=td;save();}}
+function checkAch(){
+  const na=[];
+  function unlock(id,xp){if(!S.achs.includes(id)){S.achs.push(id);na.push({id,xp});}}
+  if(S.user)unlock('first-login',10);
+  if(S.xp>=500)unlock('xp500',0);if(S.xp>=2000)unlock('xp2000',0);
+  if(S.solved.length>=10)unlock('prob10',50);
+  const begCheck={c:'c-beg',python:'py-beg',java:'java-beg',sql:'sql-beg'};
+  for(const[k,aid]of Object.entries(begCheck)){const beg=(LANGS[k]?.levels.find(l=>l.name==='Beginner')?.lessons||[]);if(beg.length&&beg.every(l=>S.done.includes(l.id)))unlock(aid,100);}
+  save();
+  na.forEach(a=>{const ach=ACHS.find(x=>x.id===a.id);if(ach){toast('Achievement: '+ach.t+'!','warning');if(a.xp)addXP(a.xp);}});
+}
+
+// ===== SIDEBAR =====
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').style.display=document.getElementById('sidebar').classList.contains('open')?'block':'none';}
+function setActiveNav(p){document.querySelectorAll('.nav-item').forEach(n=>{n.classList.toggle('active',n.dataset.page===p)});}
+function updateSidebarUser(){
+  const el=document.getElementById('sidebarUser');const mxp=document.getElementById('mobileXP');const mav=document.getElementById('mobileAvatar');
+  if(S.user){
+    el.innerHTML=`<div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-surface-900 font-bold text-xs">${S.user.name[0]}</div><div><div class="text-xs font-semibold text-white">${S.user.name}</div><div class="text-[10px] text-primary code-font">${S.xp} XP</div></div></div>`;
+    if(mxp)mxp.textContent=S.xp+' XP';if(mav)mav.textContent=S.user.name[0];
+  } else {el.innerHTML=`<button onclick="nav('login')" class="btn-primary w-full text-xs py-2">Sign In</button>`;if(mav)mav.textContent='?';}
+}
+
+// ===== ROUTER =====
+function nav(page,params=[]){
+  S.page=page;setActiveNav(page);
+  const c=document.getElementById('pageContainer');
+  // Destroy old editors
+  if(window._le){window._le.destroy();window._le=null;}
+  if(window._me){window._me.destroy();window._me=null;}
+  if(window._pe){window._pe.destroy();window._pe=null;}
+  if(window._de){window._de.destroy();window._de=null;}
+  window._charts=[];
+
+  switch(page){
+    case 'home':c.innerHTML=pageHome();initHero();break;
+    case 'login':c.innerHTML=pageLogin();break;
+    case 'signup':c.innerHTML=pageSignup();break;
+    case 'dashboard':if(!S.user){nav('login');return;}c.innerHTML=pageDash();setTimeout(initDashCharts,50);break;
+    case 'learn':c.innerHTML=params[0]?pageLesson(params[0]):pageLearn();if(params[0])setTimeout(()=>initLessonEd(params[0]),50);break;
+    case 'editor':c.innerHTML=pageEditor();setTimeout(()=>initMainEd(),50);break;
+    case 'problems':c.innerHTML=params[0]?pageProblem(params[0]):pageProblems();if(params[0])setTimeout(()=>initProbEd(params[0]),50);break;
+    case 'daily':c.innerHTML=pageDaily();setTimeout(()=>initDailyEd(),50);break;
+    case 'videos':c.innerHTML=pageVideos(params[0]);break;
+    case 'quiz':c.innerHTML=params[0]?pageQuiz(params[0]):pageQuizList();break;
+    case 'progress':c.innerHTML=pageProgress();setTimeout(initProgCharts,50);break;
+    case 'achievements':c.innerHTML=pageAchievements();break;
+    case 'leaderboard':c.innerHTML=pageLeaderboard();break;
+    case 'profile':if(!S.user){nav('login');return;}c.innerHTML=pageProfile();break;
+    case 'settings':c.innerHTML=pageSettings();break;
+    case 'interview':c.innerHTML=pageInterview();break;
+    case 'search':c.innerHTML=pageSearch(params[0]||'');break;
+    default:c.innerHTML=pageHome();initHero();
+  }
+  document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').style.display='none';window.scrollTo(0,0);
+}
+
+// ===== PAGES =====
+function pageHome(){
+  return `<div class="relative mb-10 rounded-2xl overflow-hidden" style="background:linear-gradient(135deg,#0b1a2e,#0b0f19 50%,#0a1f1a);min-height:380px;display:flex;align-items:center">
+    <canvas id="heroCanvas" class="hero-canvas"></canvas>
+    <div class="relative z-10 p-8 md:p-14 max-w-2xl">
+      <div class="badge bg-primary/10 text-primary mb-3 text-xs"><i class="fas fa-rocket mr-1"></i> Start your coding journey</div>
+      <h1 class="text-3xl md:text-5xl font-bold text-white mb-3 font-display leading-tight">Master C, Python, Java & SQL <span class="text-primary">From Zero to Advanced</span></h1>
+      <p class="text-gray-400 mb-6 max-w-lg text-sm">Learn concepts, watch lessons, write real code, run programs, fix errors, solve problems, and become interview-ready.</p>
+      <div class="flex flex-wrap gap-3">
+        <button onclick="nav(S.user?'dashboard':'login')" class="btn-primary"><i class="fas fa-play mr-2"></i>Start Learning</button>
+        <button onclick="nav('editor')" class="btn-secondary"><i class="fas fa-code mr-2"></i>Practice Coding</button>
+      </div>
+    </div>
+    <div class="hidden lg:block absolute right-14 top-1/2 -translate-y-1/2 w-64 h-56 rounded-xl border border-primary/20 bg-primary/5 p-5 code-font text-xs text-primary/60 overflow-hidden">
+      <div class="text-gray-500 mb-2">// code_master.py</div>
+      <div><span class="text-accent">def</span> <span class="text-primary">learn</span>(lang):</div>
+      <div class="pl-3">skills = []</div>
+      <div class="pl-3"><span class="text-accent">for</span> t <span class="text-accent">in</span> lang:</div>
+      <div class="pl-6">skills.append(<span class="text-accent">True</span>)</div>
+      <div class="pl-3"><span class="text-accent">return</span> <span class="text-green-300">"Master!"</span></div>
+      <div class="mt-2"><span class="text-gray-500">print</span>(learn(["C","Python","Java","SQL"]))</div>
+    </div>
+  </div>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+    ${Object.entries(LM).map(([k,m])=>`<div class="glow-card p-5 cursor-pointer" onclick="S.lang='${k}';nav('learn')">
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg mb-3" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon}"></i></div>
+      <h3 class="text-base font-bold text-white mb-1">${m.name}</h3>
+      <p class="text-gray-500 text-xs mb-2">Beginner to Advanced</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:${langProg(k)}%;background:${m.color}"></div></div>
+      <div class="text-[10px] text-gray-500 mt-1">${langProg(k)}%</div>
+    </div>`).join('')}
+  </div>
+  <h2 class="text-xl font-bold text-white mb-4 font-display">Why CodeMaster 4?</h2>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+    ${[{i:'fa-code',t:'Interactive Editor',d:'Write and run real code'},{i:'fa-bug',t:'Error Detection',d:'Line-by-line explanations'},{i:'fa-trophy',t:'Gamification',d:'XP, badges, leaderboard'},{i:'fa-play-circle',t:'Video Lessons',d:'Curated video content'},{i:'fa-brain',t:'Smart Quizzes',d:'Instant feedback'},{i:'fa-chart-line',t:'Track Progress',d:'Visual growth charts'},{i:'fa-fire',t:'Daily Challenges',d:'Build coding streaks'},{i:'fa-briefcase',t:'Interview Prep',d:'Real interview questions'}].map(f=>`<div class="glow-card p-4"><i class="fas ${f.i} text-primary mb-2"></i><h4 class="text-white font-semibold text-sm mb-0.5">${f.t}</h4><p class="text-gray-500 text-xs">${f.d}</p></div>`).join('')}
+  </div>`;
+}
+
+function pageLogin(){
+  return `<div class="max-w-sm mx-auto mt-16"><div class="glow-card p-7">
+    <h2 class="text-xl font-bold text-white mb-1 font-display">Welcome Back</h2>
+    <p class="text-gray-500 text-sm mb-5">Sign in to continue</p>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="le" type="email" class="search-input pl-3" placeholder="you@example.com" style="padding-left:12px"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Password</label><input id="lp" type="password" class="search-input pl-3" placeholder="Password" style="padding-left:12px"></div>
+      <button onclick="doLogin()" class="btn-primary w-full">Sign In</button>
+      <p class="text-center text-gray-500 text-xs">No account? <a onclick="nav('signup')" class="text-primary cursor-pointer hover:underline">Sign Up</a></p>
+    </div></div></div>`;
+}
+function pageSignup(){
+  return `<div class="max-w-sm mx-auto mt-16"><div class="glow-card p-7">
+    <h2 class="text-xl font-bold text-white mb-1 font-display">Create Account</h2>
+    <p class="text-gray-500 text-sm mb-5">Start your coding journey</p>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Name</label><input id="sn" type="text" class="search-input pl-3" placeholder="Your name" style="padding-left:12px"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="se" type="email" class="search-input pl-3" placeholder="you@example.com" style="padding-left:12px"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Password</label><input id="sp" type="password" class="search-input pl-3" placeholder="Min 6 characters" style="padding-left:12px"></div>
+      <button onclick="doSignup()" class="btn-primary w-full">Create Account</button>
+      <p class="text-center text-gray-500 text-xs">Have an account? <a onclick="nav('login')" class="text-primary cursor-pointer hover:underline">Sign In</a></p>
+    </div></div></div>`;
+}
+function doLogin(){
+  const e=document.getElementById('le').value.trim(),p=document.getElementById('lp').value;
+  if(!e||!p)return toast('Fill all fields','error');
+  try{const u=JSON.parse(localStorage.getItem('cm4_users')||'[]');const f=u.find(x=>x.e===e&&x.p===p);if(f){S.user={name:f.n,email:f.e};updateStreak();checkAch();save();updateSidebarUser();toast('Welcome, '+f.n+'!');nav('dashboard');}else toast('Invalid credentials','error');}catch(e){toast('Error','error');}
+}
+function doSignup(){
+  const n=document.getElementById('sn').value.trim(),e=document.getElementById('se').value.trim(),p=document.getElementById('sp').value;
+  if(!n||!e||!p)return toast('Fill all fields','error');if(p.length<6)return toast('Password min 6 chars','error');
+  try{const u=JSON.parse(localStorage.getItem('cm4_users')||'[]');if(u.find(x=>x.e===e))return toast('Email exists','error');u.push({n,e,p});localStorage.setItem('cm4_users',JSON.stringify(u));S.user={name:n,email:e};updateStreak();checkAch();save();updateSidebarUser();toast('Welcome, '+n+'!');nav('dashboard');}catch(e){toast('Error','error');}
+}
+function doLogout(){S.user=null;save();updateSidebarUser();toast('Logged out','info');nav('home');}
+
+function pageDash(){
+  const u=S.user,lvl=getLvl(),tl=Object.values(LANGS).reduce((a,l)=>a+l.levels.reduce((b,v)=>b+v.lessons.length,0),0);
+  return `<div class="mb-6"><h1 class="text-2xl font-bold text-white font-display">Welcome, ${u.name}!</h1><p class="text-gray-500 text-sm">Level ${lvl} — ${getLvlName(lvl)}</p></div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    ${[{i:'fa-fire',l:'Streak',v:S.streak+'d',c:'#f97316'},{i:'fa-star',l:'XP',v:S.xp,c:'#fbbf24'},{i:'fa-check-circle',l:'Solved',v:S.solved.length,c:'#00d4aa'},{i:'fa-book-open',l:'Lessons',v:S.done.length+'/'+tl,c:'#3b82f6'}].map(s=>`<div class="glow-card p-4"><div class="flex items-center gap-2 mb-1"><i class="fas ${s.i} text-xs" style="color:${s.c}"></i><span class="text-gray-500 text-xs">${s.l}</span></div><div class="text-xl font-bold text-white code-font">${s.v}</div></div>`).join('')}
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <div class="lg:col-span-2 glow-card p-5"><h3 class="text-sm font-bold text-white mb-3">Language Progress</h3>
+      ${Object.entries(LM).map(([k,m])=>{const p=langProg(k);return `<div class="mb-3"><div class="flex justify-between text-xs mb-1"><span style="color:${m.color}">${m.name}</span><span class="text-gray-500">${p}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${p}%;background:${m.color}"></div></div></div>`;}).join('')}
+    </div>
+    <div class="glow-card p-5"><h3 class="text-sm font-bold text-white mb-3">XP Overview</h3><canvas id="dashChart" height="200"></canvas></div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <div class="glow-card p-5"><h3 class="text-sm font-bold text-white mb-3">Continue Learning</h3><div class="space-y-2">
+      ${Object.entries(LM).map(([k,m])=>{const nx=nextLesson(k);return nx?`<div class="flex items-center gap-2 p-2 rounded-lg bg-surface-700 cursor-pointer hover:bg-surface-600" onclick="nav('learn','${nx.id}')"><div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon}"></i></div><div class="flex-1 min-w-0"><div class="text-xs font-medium text-white truncate">${m.name}: ${nx.title}</div></div><i class="fas fa-arrow-right text-gray-600 text-xs"></i></div>`:`<div class="flex items-center gap-2 p-2 rounded-lg bg-surface-700"><div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon}"></i></div><div class="text-xs text-gray-500">${m.name}: All done!</div></div>`;}).join('')}
+    </div></div>
+    <div class="glow-card p-5"><h3 class="text-sm font-bold text-white mb-3"><i class="fas fa-fire text-orange-500 mr-1"></i>Today's Challenge</h3>${dailyCard()}</div>
+  </div>
+  <div class="glow-card p-5"><h3 class="text-sm font-bold text-white mb-3">Recent Achievements</h3><div class="flex flex-wrap gap-2">${S.achs.length?S.achs.slice(-4).map(id=>{const a=ACHS.find(x=>x.id===id);return a?`<div class="flex items-center gap-1 bg-accent/10 text-accent px-2 py-1 rounded-lg text-xs"><i class="fas ${a.i}"></i>${a.t}</div>`:''}).join(''):'<p class="text-gray-500 text-xs">Complete lessons to earn achievements!</p>'}</div></div>`;
+}
+function dailyCard(){
+  const ch=DAILY[new Date().getDate()%DAILY.length],m=LM[ch.lang];
+  return `<div class="p-3 rounded-xl bg-surface-700 border border-surface-600">
+    <div class="flex items-center gap-2 mb-2"><span class="badge text-[10px]" style="background:${diffColor(ch.diff)}22;color:${diffColor(ch.diff)}">${diffIcon(ch.diff)} ${ch.diff}</span><span class="badge bg-surface-600 text-gray-400 text-[10px]"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span></div>
+    <h4 class="text-white font-semibold text-sm mb-1">${ch.t}</h4><p class="text-gray-500 text-xs mb-2">${ch.d}</p>
+    <div class="flex items-center justify-between"><span class="text-accent text-xs code-font">+${ch.xp} XP</span><button onclick="nav('daily')" class="btn-primary btn-sm">Solve</button></div></div>`;
+}
+
+function pageLearn(){
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">Choose a Language</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="langCards">
+    ${Object.entries(LANGS).map(([k,lang])=>{const m=LM[k],p=langProg(k);return `<div class="glow-card p-5 cursor-pointer" onclick="showLangPath('${k}')">
+      <div class="flex items-center gap-3 mb-3"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon}"></i></div><div><h2 class="text-lg font-bold text-white">${m.name}</h2><p class="text-gray-500 text-xs">${lang.levels.reduce((a,l)=>a+l.lessons.length,0)} Lessons</p></div><div class="ml-auto text-right"><div class="text-xl font-bold" style="color:${m.color}">${p}%</div></div></div>
+      <div class="progress-bar mb-3"><div class="progress-fill" style="width:${p}%;background:${m.color}"></div></div>
+      ${lang.levels.map(l=>`<div class="flex justify-between text-xs py-0.5"><span class="text-gray-400">${l.name}</span><span class="text-gray-600">${l.lessons.filter(x=>S.done.includes(x.id)).length}/${l.lessons.length}</span></div>`).join('')}
+    </div>`;}).join('')}
+  </div><div id="langDetail"></div>`;
+}
+function showLangPath(k){
+  const lang=LANGS[k],m=LM[k],el=document.getElementById('langDetail');if(!el||!lang)return;
+  el.innerHTML=`<div class="mt-6"><button onclick="el.innerHTML=''" class="text-gray-500 hover:text-white text-xs mb-3 inline-flex items-center gap-1 bg-transparent border-none cursor-pointer font-[inherit]"><i class="fas fa-arrow-left"></i> Back</button>
+    <h2 class="text-xl font-bold text-white mb-4 font-display">${m.name} Learning Path</h2>
+    ${lang.levels.map(lv=>`<div class="mb-5"><h3 class="text-sm font-semibold text-white mb-2"><span class="inline-block w-2 h-2 rounded-full mr-2" style="background:${m.color}"></span>${lv.name} <span class="text-gray-600 text-xs">(${lv.lessons.filter(x=>S.done.includes(x.id)).length}/${lv.lessons.length})</span></h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2">${lv.lessons.map((ls,i)=>{const dn=S.done.includes(ls.id);return `<div class="glow-card p-3 cursor-pointer flex items-center gap-2 ${dn?'border-primary/30':''}" onclick="nav('learn','${ls.id}')"><div class="w-7 h-7 rounded-full flex items-center justify-center text-xs ${dn?'bg-primary text-surface-900':'bg-surface-600 text-gray-500'}">${dn?'<i class="fas fa-check"></i>':i+1}</div><div class="flex-1 min-w-0"><div class="text-xs font-medium ${dn?'text-primary':'text-white'} truncate">${ls.title}</div><div class="text-[10px] text-gray-600 truncate">${ls.desc}</div></div></div>`;}).join('')}</div></div>`).join('')}
+  </div>`;el.scrollIntoView({behavior:'smooth'});
+}
+
+function pageLesson(id){
+  const ls=findLesson(id);if(!ls)return '<p class="text-gray-500">Not found.</p>';
+  const m=LM[ls.lang],dn=S.done.includes(id);
+  const prev=getPrev(ls.lang,id),nxt=getNext(ls.lang,id);
+  return `<button onclick="nav('learn')" class="text-gray-500 hover:text-white text-xs mb-3 inline-flex items-center gap-1 bg-transparent border-none cursor-pointer font-[inherit]"><i class="fas fa-arrow-left"></i> Back</button>
+  <div class="flex items-center gap-2 mb-2"><span class="badge text-[10px]" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span><span class="badge bg-surface-600 text-gray-400 text-[10px]">${ls.level}</span>${dn?'<span class="badge bg-primary/15 text-primary text-[10px]"><i class="fas fa-check mr-1"></i>Done</span>':''}</div>
+  <h1 class="text-2xl font-bold text-white font-display mb-1">${ls.title}</h1>
+  <p class="text-gray-400 text-sm mb-5">${ls.desc}</p>
+  <div class="glow-card mb-4 overflow-hidden">
+    <div class="editor-toolbar"><span class="lang-tab active" style="background:${m.color}22;color:${m.color}">${m.name}</span><span class="flex-1"></span>
+      <button onclick="runLesson('${id}')" class="btn-primary btn-sm"><i class="fas fa-play mr-1"></i>Run</button>
+      <button onclick="resetLesson('${id}')" class="btn-secondary btn-sm"><i class="fas fa-rotate-left"></i></button></div>
+    <div id="lessonEd" style="height:280px"></div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+    <div class="output-panel"><div class="output-header text-primary"><i class="fas fa-terminal"></i> Output</div><div class="output-body text-green-400" id="lOut">Click Run to execute...</div></div>
+    <div class="output-panel" id="lErrP" style="display:none"><div class="output-header text-rose-400"><i class="fas fa-bug"></i> Errors</div><div class="output-body text-rose-400" id="lErr"></div></div>
+  </div>
+  ${!dn?`<button onclick="completeLesson('${id}')" class="btn-primary mb-4"><i class="fas fa-check mr-1"></i>Mark Complete (+15 XP)</button>`:''}
+  <div class="flex justify-between">${prev?`<button onclick="nav('learn','${prev.id}')" class="btn-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i>${prev.title}</button>`:'<div></div>'}${nxt?`<button onclick="nav('learn','${nxt.id}')" class="btn-secondary btn-sm">${nxt.title}<i class="fas fa-arrow-right ml-1"></i></button>`:'<div></div>'}</div>`;
+}
+function getPrev(k,id){const ls=allLessons(k),i=ls.findIndex(l=>l.id===id);return i>0?ls[i-1]:null;}
+function getNext(k,id){const ls=allLessons(k),i=ls.findIndex(l=>l.id===id);return i>=0&&i<ls.length-1?ls[i+1]:null;}
+function initLessonEd(id){const ls=findLesson(id);if(!ls)return;const el=document.getElementById('lessonEd');if(!el)return;window._le=ace.edit(el);window._le.setTheme('ace/theme/one_dark');window._le.session.setMode('ace/mode/'+MODES[ls.lang]);window._le.setOptions({fontSize:13,showPrintMargin:false,wrap:true,tabSize:4});window._le.setValue(ls.code,-1);window._le.clearSelection();}
+function resetLesson(id){const ls=findLesson(id);if(ls&&window._le){window._le.setValue(ls.code,-1);window._le.clearSelection();}}
+function completeLesson(id){if(!S.done.includes(id)){S.done.push(id);addXP(15);checkAch();save();toast('Lesson completed!');nav('learn',id);}}
+
+function pageEditor(){
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">Code Editor</h1>
+  <div class="glow-card mb-3 overflow-hidden">
+    <div class="editor-toolbar">
+      <span class="text-[10px] text-gray-500 mr-1">Lang:</span>
+      ${Object.entries(LM).map(([k,m])=>`<span class="lang-tab ${k===S.editorLang?'active':''}" onclick="switchLang('${k}')" style="${k===S.editorLang?`background:${m.color}22;color:${m.color}`:''}"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span>`).join('')}
+      <span class="flex-1"></span>
+      <button onclick="if(window._me)navigator.clipboard.writeText(window._me.getValue());toast('Copied!')" class="btn-secondary btn-sm"><i class="fas fa-copy"></i></button>
+      <button onclick="if(window._me)window._me.setValue('',-1)" class="btn-secondary btn-sm"><i class="fas fa-trash"></i></button>
+      <button onclick="runEditor()" class="btn-primary btn-sm"><i class="fas fa-play mr-1"></i>Run</button>
+    </div>
+    <div id="mainEd" style="height:380px"></div>
+  </div>
+  <div class="output-panel" id="edOutP" style="display:none"><div class="output-header text-primary"><i class="fas fa-terminal"></i> Output</div><div class="output-body text-green-400" id="edOut"></div></div>
+  <div class="output-panel mt-2" id="edErrP" style="display:none"><div class="output-header text-rose-400"><i class="fas fa-bug"></i> Errors</div><div class="output-body text-rose-400" id="edErr"></div></div>`;
+}
+function initMainEd(){
+  const el=document.getElementById('mainEd');if(!el)return;
+  window._me=ace.edit(el);window._me.setTheme('ace/theme/one_dark');window._me.session.setMode('ace/mode/'+MODES[S.editorLang]);
+  window._me.setOptions({fontSize:13,showPrintMargin:false,wrap:true,tabSize:4});
+  const def={c:'// Write C code here\n#include <stdio.h>\nint main() {\n    printf("Hello from C!\\n");\n    return 0;\n}',python:'# Write Python code here\nprint("Hello from Python!")',java:'// Write Java code\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello from Java!");\n    }\n}',sql:'-- Write SQL here\nSELECT "Hello from SQL!" AS msg;'};
+  window._me.setValue(def[S.editorLang]||'',-1);window._me.clearSelection();
+}
+function switchLang(k){S.editorLang=k;nav('editor');}
+
+function pageProblems(){
+  const all=Object.entries(PROBLEMS).flatMap(([l,ps])=>ps.map(p=>({...p,lang:l})));
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">Practice Problems</h1>
+  <div class="flex flex-wrap gap-2 mb-5">
+    <button class="tab-btn active" onclick="filterProb('all',this)">All</button>
+    ${Object.entries(LM).map(([k,m])=>`<button class="tab-btn" onclick="filterProb('${k}',this)">${m.name}</button>`).join('')}
+    <button class="tab-btn" onclick="filterProb('Easy',this)">Easy</button>
+    <button class="tab-btn" onclick="filterProb('Medium',this)">Medium</button>
+  </div>
+  <div id="probList" class="grid grid-cols-1 md:grid-cols-2 gap-3">${all.map(p=>probCard(p)).join('')}</div>`;
+}
+function probCard(p){
+  const m=LM[p.lang],sv=S.solved.includes(p.id);
+  return `<div class="glow-card p-4 cursor-pointer prob-card" data-lang="${p.lang}" data-diff="${p.diff}" onclick="nav('problems','${p.id}')">
+    <div class="flex items-center gap-2 mb-1"><span class="badge text-[10px]" style="background:${diffColor(p.diff)}22;color:${diffColor(p.diff)}">${diffIcon(p.diff)} ${p.diff}</span><span class="badge bg-surface-600 text-gray-400 text-[10px]"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span>${sv?'<span class="badge bg-primary/15 text-primary text-[10px]"><i class="fas fa-check mr-1"></i>Solved</span>':''}</div>
+    <h3 class="text-white font-semibold text-sm mb-0.5">${p.t}</h3><p class="text-gray-500 text-xs mb-2">${p.d}</p>
+    <div class="flex items-center justify-between text-xs"><span class="text-gray-600">${p.cat}</span><span class="text-accent code-font">+${p.xp} XP</span></div></div>`;
+}
+function filterProb(f,btn){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.prob-card').forEach(c=>{c.style.display=(f==='all'||c.dataset.lang===f||c.dataset.diff===f)?'':'none';});}
+
+function pageProblem(id){
+  const p=findProblem(id);if(!p)return '<p class="text-gray-500">Not found.</p>';const m=LM[p.lang],sv=S.solved.includes(p.id);
+  return `<button onclick="nav('problems')" class="text-gray-500 hover:text-white text-xs mb-3 inline-flex items-center gap-1 bg-transparent border-none cursor-pointer font-[inherit]"><i class="fas fa-arrow-left"></i> Back</button>
+  <div class="flex items-center gap-2 mb-2"><span class="badge text-[10px]" style="background:${diffColor(p.diff)}22;color:${diffColor(p.diff)}">${diffIcon(p.diff)} ${p.diff}</span><span class="badge text-[10px]" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span>${sv?'<span class="badge bg-primary/15 text-primary text-[10px]"><i class="fas fa-check mr-1"></i>Solved</span>':''}</div>
+  <h1 class="text-xl font-bold text-white font-display mb-1">${p.t}</h1><p class="text-gray-400 text-sm mb-3">${p.d}</p>
+  <div class="glow-card p-3 mb-3"><h4 class="text-xs font-semibold text-gray-400 mb-1">Examples</h4>${p.tc.slice(0,2).map(t=>`<div class="code-font text-xs mb-0.5"><span class="text-accent">Input:</span> <span class="text-white">${t.i||'(none)'}</span> → <span class="text-primary">Output:</span> <span class="text-white">${t.o}</span></div>`).join('')}</div>
+  <div class="glow-card mb-3 overflow-hidden">
+    <div class="editor-toolbar"><span class="lang-tab active" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span><span class="flex-1"></span>
+      <button onclick="runProb('${id}')" class="btn-secondary btn-sm"><i class="fas fa-play mr-1"></i>Run</button>
+      <button onclick="submitProb('${id}')" class="btn-primary btn-sm"><i class="fas fa-check mr-1"></i>Submit</button></div>
+    <div id="probEd" style="height:280px"></div>
+  </div><div id="probRes"></div>`;
+}
+function initProbEd(id){const p=findProblem(id);if(!p)return;const el=document.getElementById('probEd');if(!el)return;window._pe=ace.edit(el);window._pe.setTheme('ace/theme/one_dark');window._pe.session.setMode('ace/mode/'+MODES[p.lang]);window._pe.setOptions({fontSize:13,showPrintMargin:false,wrap:true,tabSize:4});window._pe.setValue(p.tpl,-1);window._pe.clearSelection();}
+
+function pageDaily(){
+  const ch=DAILY[new Date().getDate()%DAILY.length],m=LM[ch.lang];
+  return `<div class="flex items-center gap-2 mb-2"><span class="streak-fire text-xl">🔥</span><h1 class="text-2xl font-bold text-white font-display">Daily Challenge</h1></div>
+  <p class="text-gray-400 text-sm mb-5">Solve today's challenge to keep your streak!</p>
+  <div class="flex items-center gap-2 mb-5"><span class="badge text-[10px]" style="background:${diffColor(ch.diff)}22;color:${diffColor(ch.diff)}">${diffIcon(ch.diff)} ${ch.diff}</span><span class="badge text-[10px]" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span><span class="badge bg-accent/15 text-accent text-[10px]"><i class="fas fa-star mr-1"></i>+${ch.xp} XP</span></div>
+  <div class="glow-card p-3 mb-3"><h3 class="text-white font-semibold text-sm">${ch.t}</h3><p class="text-gray-400 text-xs">${ch.d}</p></div>
+  <div class="glow-card mb-3 overflow-hidden">
+    <div class="editor-toolbar"><span class="lang-tab active" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span><span class="flex-1"></span>
+      <button onclick="runDaily()" class="btn-secondary btn-sm"><i class="fas fa-play mr-1"></i>Run</button>
+      <button onclick="submitDaily()" class="btn-primary btn-sm"><i class="fas fa-check mr-1"></i>Submit</button></div>
+    <div id="dailyEd" style="height:280px"></div>
+  </div><div id="dailyRes"></div>`;
+}
+function initDailyEd(){const ch=DAILY[new Date().getDate()%DAILY.length],m=LM[ch.lang],el=document.getElementById('dailyEd');if(!el)return;window._de=ace.edit(el);window._de.setTheme('ace/theme/one_dark');window._de.session.setMode('ace/mode/'+MODES[ch.lang]);window._de.setOptions({fontSize:13,showPrintMargin:false,wrap:true,tabSize:4});window._de.setValue(ch.tpl,-1);window._de.clearSelection();}
+
+function pageVideos(lang){
+  const vids=lang?VIDEOS[lang]:Object.entries(VIDEOS).flatMap(([l,vs])=>vs.map(v=>({...v,lang:l})));
+  const title=lang?LM[lang].name+' Videos':'All Video Lessons';
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">${title}</h1>
+  ${!lang?`<div class="flex flex-wrap gap-2 mb-5">${Object.entries(LM).map(([k,m])=>`<button class="tab-btn" onclick="nav('videos','${k}')"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</button>`).join('')}</div>`:`<button onclick="nav('videos')" class="text-gray-500 hover:text-white text-xs mb-3 inline-flex items-center gap-1 bg-transparent border-none cursor-pointer font-[inherit]"><i class="fas fa-arrow-left"></i> All</button>`}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">${vids.map(v=>{const m=lang?LM[lang]:LM[v.lang];return `<div class="glow-card overflow-hidden"><div class="aspect-video bg-surface-700"><iframe src="${v.u}" class="w-full h-full" frameborder="0" allowfullscreen loading="lazy"></iframe></div><div class="p-3"><div class="flex items-center gap-2 mb-1"><span class="badge text-[10px]" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span><span class="text-[10px] text-gray-600">${v.d}</span></div><h3 class="text-white font-semibold text-xs">${v.t}</h3></div></div>`;}).join('')}</div>`;
+}
+
+function pageQuizList(){
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">Quizzes</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${Object.entries(QUIZZES).flatMap(([l,qs])=>qs.map(q=>{const m=LM[l],sc=S.quizScores[q.id];return `<div class="glow-card p-5 cursor-pointer" onclick="nav('quiz','${q.id}')"><div class="flex items-center gap-3 mb-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon} text-lg"></i></div><div><h3 class="text-white font-semibold text-sm">${m.name}: ${q.topic}</h3><p class="text-gray-500 text-xs">${q.qs.length} Questions</p></div></div>${sc!==undefined?`<div class="flex items-center gap-2"><div class="progress-bar flex-1"><div class="progress-fill" style="width:${sc}%;background:${sc>=70?'#00d4aa':'#f43f5e'}"></div></div><span class="text-xs code-font" style="color:${sc>=70?'#00d4aa':'#f43f5e'}">${sc}%</span></div>`:'<p class="text-gray-600 text-xs">Not attempted</p>'}</div>`;})).join('')}</div>`;
+}
+
+let _quiz=null,_qAns=[];
+function pageQuiz(id){
+  const quiz=Object.values(QUIZZES).flat().find(q=>q.id===id);if(!quiz)return '<p class="text-gray-500">Not found.</p>';
+  const lang=Object.entries(QUIZZES).find(([k,qs])=>qs.includes(quiz))?.[0],m=LM[lang];
+  _quiz=quiz;_qAns=new Array(quiz.qs.length).fill(-1);
+  return `<button onclick="nav('quiz')" class="text-gray-500 hover:text-white text-xs mb-3 inline-flex items-center gap-1 bg-transparent border-none cursor-pointer font-[inherit]"><i class="fas fa-arrow-left"></i> Back</button>
+  <div class="flex items-center gap-2 mb-5"><span class="badge text-[10px]" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon} mr-1"></i>${m.name}</span><h1 class="text-xl font-bold text-white font-display">${quiz.topic} Quiz</h1></div>
+  <div id="quizCont" class="space-y-5">${quiz.qs.map((q,i)=>`
+    <div class="glow-card p-5" id="qq${i}">
+      <div class="flex items-start gap-2 mb-3"><span class="w-7 h-7 rounded-full bg-surface-600 flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">${i+1}</span><p class="text-white font-medium text-sm">${q.q}</p></div>
+      <div class="space-y-2 ml-9">${q.o.map((opt,j)=>`<div class="quiz-option" onclick="selAns(${i},${j})" id="qo${i}_${j}"><span class="w-5 h-5 rounded-full border border-gray-600 flex items-center justify-center text-[10px] shrink-0" id="qc${i}_${j}">${String.fromCharCode(65+j)}</span><span class="code-font text-xs">${opt}</span></div>`).join('')}</div>
+      <div class="ml-9 mt-2 hidden" id="qe${i}"><div class="p-2 rounded-lg bg-primary/5 border border-primary/20 text-xs text-primary">${q.ex}</div></div>
+    </div>`).join('')}
+  </div>
+  <button onclick="submitQuiz('${id}')" class="btn-primary mt-5 px-6" id="quizSub"><i class="fas fa-check mr-1"></i>Submit Quiz</button><div id="quizRes" class="mt-5"></div>`;
+}
+function selAns(qi,oi){if(!_quiz)return;if(document.getElementById('qq'+qi).classList.contains('done'))return;_qAns[qi]=oi;for(let j=0;j<_quiz.qs[qi].o.length;j++){const el=document.getElementById('qo'+qi+'_'+j),ci=document.getElementById('qc'+qi+'_'+j);if(j===oi){el.classList.add('selected');ci.style.borderColor='#fbbf24';ci.style.color='#fbbf24';}else{el.classList.remove('selected');ci.style.borderColor='';ci.style.color='';}}}
+function submitQuiz(id){
+  if(!_quiz)return;let corr=0;
+  _quiz.qs.forEach((q,i)=>{
+    const qEl=document.getElementById('qq'+i);qEl.classList.add('done');
+    document.getElementById('qe'+i)?.classList.remove('hidden');
+    q.o.forEach((_,j)=>{const el=document.getElementById('qo'+i+'_'+j),ci=document.getElementById('qc'+i+'_'+j);el.style.cursor='default';if(j===q.a){el.classList.add('correct');ci.style.borderColor='#00d4aa';ci.style.color='#00d4aa';ci.innerHTML='<i class="fas fa-check text-[10px]"></i>';}else if(j===_qAns[i]&&j!==q.a){el.classList.add('wrong');ci.style.borderColor='#f43f5e';ci.style.color='#f43f5e';ci.innerHTML='<i class="fas fa-xmark text-[10px]"></i>';}});
+    if(_qAns[i]===q.a)corr++;
+  });
+  const pct=Math.round(corr/_quiz.qs.length*100);S.quizScores[id]=pct;addXP(corr*5);
+  if(!S.achs.includes('first-quiz')){S.achs.push('first-quiz');addXP(25);}checkAch();save();
+  document.getElementById('quizSub').style.display='none';
+  document.getElementById('quizRes').innerHTML=`<div class="glow-card p-5 text-center"><div class="text-3xl font-bold mb-1 font-display" style="color:${pct>=70?'#00d4aa':'#f43f5e'}">${pct}%</div><p class="text-gray-400 text-sm">${corr}/${_quiz.qs.length} correct</p><p class="text-accent code-font text-sm mt-1">+${corr*5} XP</p></div>`;
+  toast(pct>=70?'Quiz passed!':'Review the explanations.',pct>=70?'success':'warning');
+}
+
+function pageProgress(){
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">Your Progress</h1>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">${[{l:'XP',v:S.xp,i:'fa-star',c:'#fbbf24'},{l:'Level',v:getLvl(),i:'fa-rocket',c:'#00d4aa'},{l:'Streak',v:S.streak+'d',i:'fa-fire',c:'#f97316'},{l:'Solved',v:S.solved.length,i:'fa-check-circle',c:'#a855f7'}].map(s=>`<div class="glow-card p-4 text-center"><i class="fas ${s.i} text-xl mb-1" style="color:${s.c}"></i><div class="text-xl font-bold text-white code-font">${s.v}</div><div class="text-gray-500 text-xs">${s.l}</div></div>`).join('')}</div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6"><div class="glow-card p-5"><h3 class="text-sm font-bold text-white mb-3">Language Progress</h3><canvas id="progBar" height="220"></canvas></div><div class="glow-card p-5"><h3 class="text-sm font-bold text-white mb-3">Activity</h3><canvas id="progDonut" height="220"></canvas></div></div>
+  <div class="glow-card p-5"><h3 class="text-sm font-bold text-white mb-3">Breakdown</h3>${Object.entries(LM).map(([k,m])=>{const t=allLessons(k).length,d=allLessons(k).filter(l=>S.done.includes(l.id)).length,ps=(PROBLEMS[k]||[]).length,sv=(PROBLEMS[k]||[]).filter(p=>S.solved.includes(p.id)).length;return `<div class="mb-3 p-3 rounded-xl bg-surface-700"><div class="flex items-center gap-2 mb-2"><div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon}"></i></div><span class="text-white font-semibold text-sm">${m.name}</span></div><div class="grid grid-cols-3 gap-3 text-center text-xs"><div><div class="text-white font-bold code-font">${d}/${t}</div><div class="text-gray-500">Lessons</div></div><div><div class="text-white font-bold code-font">${sv}/${ps}</div><div class="text-gray-500">Problems</div></div><div><div class="text-white font-bold code-font">${langProg(k)}%</div><div class="text-gray-500">Progress</div></div></div></div>`;}).join('')}</div>`;
+}
+function pageAchievements(){
+  return `<h1 class="text-2xl font-bold text-white font-display mb-1">Achievements</h1><p class="text-gray-500 text-sm mb-5">${S.achs.length}/${ACHS.length} Unlocked</p>
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">${ACHS.map(a=>{const u=S.achs.includes(a.id);return `<div class="achievement-card ${u?'unlocked':'locked'}"><div class="text-2xl mb-2 ${u?'text-accent':'text-gray-600'}"><i class="fas ${a.i}"></i></div><h4 class="text-xs font-semibold ${u?'text-white':'text-gray-600'}">${a.t}</h4><p class="text-[10px] ${u?'text-gray-400':'text-gray-700'} mt-0.5">${a.d}</p>${a.xp?`<div class="text-[10px] text-accent mt-1 code-font">${a.xp} XP</div>`:''}</div>`;}).join('')}</div>`;
+}
+function pageLeaderboard(){
+  const sorted=[...LEADERBOARD].sort((a,b)=>b.xp-a.xp);
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">Leaderboard</h1>
+  <div class="glow-card overflow-hidden">
+    <div class="grid grid-cols-12 gap-2 p-3 text-[10px] text-gray-500 font-semibold border-b border-surface-600"><div class="col-span-1">#</div><div class="col-span-6">Student</div><div class="col-span-2 text-right">XP</div><div class="col-span-1 text-right">Lvl</div><div class="col-span-2 text-right">Streak</div></div>
+    ${sorted.map((u,i)=>`<div class="grid grid-cols-12 gap-2 p-3 items-center text-xs border-b border-surface-600/50"><div class="col-span-1 font-bold ${i<3?'text-accent':'text-gray-500'}">${i<3?['','🥇','🥈','🥉'][i+1]:i+1}</div><div class="col-span-6 text-white font-medium">${u.n}</div><div class="col-span-2 text-right text-accent code-font">${u.xp.toLocaleString()}</div><div class="col-span-1 text-right text-gray-400">${u.l}</div><div class="col-span-2 text-right text-orange-400">${u.s}d <i class="fas fa-fire text-[10px]"></i></div></div>`).join('')}
+  </div>`;
+}
+function pageProfile(){
+  if(!S.user){nav('login');return '';}
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">Profile</h1>
+  <div class="glow-card p-6 mb-5"><div class="flex items-center gap-5 mb-5"><div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-surface-900 text-2xl font-bold font-display">${S.user.name[0]}</div><div><h2 class="text-xl font-bold text-white">${S.user.name}</h2><p class="text-gray-500 text-sm">${S.user.email}</p><p class="text-primary code-font text-xs mt-1">Level ${getLvl()} — ${getLvlName(getLvl())}</p></div></div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">${[{l:'XP',v:S.xp},{l:'Streak',v:S.streak+'d'},{l:'Lessons',v:S.done.length},{l:'Problems',v:S.solved.length}].map(s=>`<div class="text-center p-3 rounded-xl bg-surface-700"><div class="text-lg font-bold text-white code-font">${s.v}</div><div class="text-[10px] text-gray-500">${s.l}</div></div>`).join('')}</div></div>
+  <div class="glow-card p-5"><h3 class="text-sm font-bold text-white mb-3">Account</h3><button onclick="doLogout()" class="btn-secondary text-rose-400 border-rose-400/30 hover:border-rose-400"><i class="fas fa-sign-out-alt mr-1"></i>Sign Out</button></div>`;
+}
+function pageSettings(){
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">Settings</h1>
+  <div class="glow-card p-5 mb-4"><h3 class="text-sm font-bold text-white mb-3">Data</h3><p class="text-gray-400 text-xs mb-3">Reset all progress and start fresh.</p><button onclick="if(confirm('Reset all progress?')){S.done=[];S.solved=[];S.quizScores={};S.xp=0;S.streak=0;S.achs=[];save();toast('Reset!','warning');nav('settings')}" class="btn-secondary text-rose-400 border-rose-400/30 hover:border-rose-400 text-sm"><i class="fas fa-trash mr-1"></i>Reset Progress</button></div>
+  <div class="glow-card p-5"><h3 class="text-sm font-bold text-white mb-2">About</h3><p class="text-gray-400 text-xs">CodeMaster 4 v1.0 — C, Python, Java, SQL learning platform.</p><p class="text-gray-600 text-[10px] mt-1">Python runs via Pyodide (WebAssembly). SQL runs via sql.js. C/Java show simulated output.</p></div>`;
+}
+function pageInterview(){
+  const qs={c:['What is the difference between malloc and calloc?','Explain ++i vs i++','What is a dangling pointer?','struct vs union?','Call by value vs call by reference?'],python:['List vs tuple?','What are decorators?','== vs is?','List comprehension vs map?','Explain GIL'],java:['== vs .equals()?','Abstract class vs interface?','HashMap vs Hashtable?','Method overloading vs overriding?','What is JVM?'],sql:['WHERE vs HAVING?','Types of JOINs?','What is normalization?','DELETE vs TRUNCATE?','Stored procedure?']};
+  return `<h1 class="text-2xl font-bold text-white font-display mb-5">Interview Preparation</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${Object.entries(qs).map(([k,qs2])=>{const m=LM[k];return `<div class="glow-card p-5"><div class="flex items-center gap-2 mb-3"><div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:${m.color}22;color:${m.color}"><i class="fa${m.brand?'b':'s'} ${m.icon}"></i></div><h3 class="text-sm font-bold text-white">${m.name} Questions</h3></div><div class="space-y-2">${qs2.map((q,i)=>`<div class="flex items-start gap-2 p-2 rounded-lg bg-surface-700"><span class="w-5 h-5 rounded-full bg-surface-600 flex items-center justify-center text-[10px] text-gray-400 shrink-0">${i+1}</span><span class="text-xs text-gray-300">${q}</span></div>`).join('')}</div></div>`;}).join('')}</div>`;
+}
+function pageSearch(q){
+  q=(q||'').toLowerCase();
+  if(!q)return `<h1 class="text-2xl font-bold text-white font-display mb-5">Search</h1><div class="glow-card p-10 text-center"><i class="fas fa-search text-3xl text-gray-700 mb-3"></i><p class="text-gray-500 text-sm">Search for lessons, problems, or topics</p></div>`;
+  let res=[];
+  for(const[k,lang]of Object.entries(LANGS))for(const lv of lang.levels)for(const l of lv.lessons)if(l.title.toLowerCase().includes(q)||l.desc.toLowerCase().includes(q))res.push({type:'Lesson',title:l.title,sub:LM[k].name+' — '+l.desc,action:`nav('learn','${l.id}')`});
+  for(const[k,ps]of Object.entries(PROBLEMS))for(const p of ps)if(p.t.toLowerCase().includes(q)||p.d.toLowerCase().includes(q)||p.cat.toLowerCase().includes(q))res.push({type:'Problem',title:p.t,sub:LM[k].name+' — '+p.diff,action:`nav('problems','${p.id}')`});
+  for(const[k,qs2]of Object.entries(QUIZZES))for(const qz of qs2)if(qz.topic.toLowerCase().includes(q))res.push({type:'Quiz',title:LM[k].name+': '+qz.topic,sub:qz.qs.length+' Questions',action:`nav('quiz','${qz.id}')`});
+  return `<h1 class="text-2xl font-bold text-white font-display mb-1">Search</h1><p class="text-gray-500 text-sm mb-5">${res.length} results for "${q}"</p>
+  ${res.length?`<div class="space-y-2">${res.map(r=>`<div class="glow-card p-3 cursor-pointer flex items-center gap-3" onclick="${r.action}"><div class="w-7 h-7 rounded-lg bg-surface-600 flex items-center justify-center text-[10px] text-gray-400 shrink-0">${r.type[0]}</div><div class="flex-1 min-w-0"><div class="text-white text-sm font-medium">${r.title}</div><div class="text-gray-600 text-[10px] truncate">${r.sub}</div></div></div>`).join('')}</div>`:'<div class="glow-card p-10 text-center"><p class="text-gray-500 text-sm">No results found.</p></div>'}`;
+}
+
+// ===== CODE EXECUTION =====
+let _pyodide=null,_pyLoading=false,_sqljs=null;
+async function getPy(){
+  if(_pyodide)return _pyodide;if(_pyLoading){while(_pyLoading)await new Promise(r=>setTimeout(r,100));return _pyodide;}
+  _pyLoading=true;
+  try{if(!window.loadPyodide)await new Promise((r,j)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';s.onload=r;s.onerror=j;document.head.appendChild(s);});_pyodide=await window.loadPyodide();_pyLoading=false;return _pyodide;}catch(e){_pyLoading=false;throw e;}
+}
+async function getSQL(){
+  if(_sqljs)return _sqljs;
+  if(!window.initSqlJs)await new Promise((r,j)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js';s.onload=r;s.onerror=j;document.head.appendChild(s);});
+  _sqljs=await window.initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`});return _sqljs;
+}
+async function runCode(code,lang,input=''){
+  if(lang==='python'){try{const py=await getPy();let out='',err='';py.runPython('import sys,io\nsys.stdout=io.StringIO()\nsys.stderr=io.StringIO()\nsys.stdin=io.StringIO('+JSON.stringify(input)+')\n');try{await py.runPythonAsync(code);out=py.runPython('sys.stdout.getvalue()');err=py.runPython('sys.stderr.getvalue()');}catch(e){err=e.message||String(e);}py.runPython('sys.stdout=sys.__stdout__\nsys.stderr=sys.__stderr__\nsys.stdin=sys.__stdin__\n');return {out:out.trim(),err:err.trim()};}catch(e){return {out:'',err:'Python load error: '+e.message};}}
+  if(lang==='sql'){try{const SQL=await getSQL();const db=new SQL.Database();let out='';try{const stmts=code.split(';').filter(s=>s.trim());for(const st of stmts){if(!st.trim())continue;try{const r=db.exec(st.trim());if(r.length){out+=r[0].columns.join('\t')+'\n';r[0].values.forEach(row=>{out+=row.join('\t')+'\n';});}}catch(e){return {out:'',err:e.message};}}}finally{db.close();}return {out:out.trim(),err:''};}catch(e){return {out:'',err:'SQL error: '+e.message};}}
+  return {out:'(C/Java execution requires a backend server. Python and SQL run natively in your browser via WebAssembly!)',err:''};
+}
+function fmtErr(e){const lm=e.match(/line (\d+)/i);let f='';if(lm)f+='Error on Line '+lm[1]+'\n\n';let m=e.replace(/.*File "<string>", line \d+/,'').trim();if(m.startsWith(':'))m=m.substring(1).trim();if(!f)f='Error:\n';f+=m;if(m.toLowerCase().includes('syntaxerror'))f+='\n\nTip: Check for missing colons, parentheses, or quotes.';else if(m.toLowerCase().includes('nameerror'))f+='\n\nTip: Variable or function not defined.';else if(m.toLowerCase().includes('typeerror'))f+='\n\nTip: Check your data types.';else if(m.toLowerCase().includes('indentationerror'))f+='\n\nTip: Fix your indentation.';return f;}
+
+// ===== RUN HANDLERS =====
+async function runLesson(id){const ls=findLesson(id);if(!ls||!window._le)return;const o=document.getElementById('lOut'),ep=document.getElementById('lErrP'),er=document.getElementById('lErr');o.textContent='Running...';ep.style.display='none';const r=await runCode(window._le.getValue(),ls.lang);o.textContent=r.out||'(no output)';o.style.color=r.err?'#f43f5e':'#4ade80';if(r.err){ep.style.display='';er.textContent=fmtErr(r.err);}if(!S.achs.includes('first-code')){S.achs.push('first-code');addXP(20);checkAch();save();}}
+async function runEditor(){if(!window._me)return;const op=document.getElementById('edOutP'),o=document.getElementById('edOut'),ep=document.getElementById('edErrP'),e=document.getElementById('edErr');op.style.display='';ep.style.display='none';o.textContent='Running...';o.style.color='#4ade80';const r=await runCode(window._me.getValue(),S.editorLang);o.textContent=r.out||'(no output)';if(r.err){ep.style.display='';e.textContent=fmtErr(r.err);}}
+async function runProb(id){if(!window._pe)return;const el=document.getElementById('probRes');el.innerHTML='<div class="output-panel"><div class="output-header text-primary"><i class="fas fa-spinner fa-spin"></i> Running...</div></div>';const p=findProblem(id),tc=p.tc[0],r=await runCode(window._pe.getValue(),p.lang,tc.i);el.innerHTML=`<div class="output-panel"><div class="output-header text-primary"><i class="fas fa-terminal"></i> Output</div><div class="output-body" style="color:${r.err?'#f43f5e':'#4ade80'}">${r.err?fmtErr(r.err):(r.out||'(no output)')}</div></div>`;}
+async function submitProb(id){if(!window._pe)return;const p=findProblem(id);if(!p)return;const el=document.getElementById('probRes');el.innerHTML='<div class="text-center py-6 text-gray-500"><i class="fas fa-spinner fa-spin text-xl mb-1"></i><p class="text-sm">Running tests...</p></div>';let pass=0;const res=[];for(const tc of p.tc){const r=await runCode(window._pe.getValue(),p.lang,tc.i);const ok=!r.err&&r.out.trim()===tc.o.trim();if(ok)pass++;res.push({tc,ok});}const allOk=pass===p.tc.length;if(allOk&&!S.solved.includes(id)){S.solved.push(id);addXP(p.xp);if(!S.achs.includes('first-prob')){S.achs.push('first-prob');addXP(30);}checkAch();save();}
+el.innerHTML=`<div class="glow-card p-4 mb-3"><h4 class="text-white font-semibold text-sm mb-2">Test Cases: ${pass}/${p.tc.length} Passed</h4><div class="space-y-1">${res.map((r,i)=>`<div class="test-case ${r.ok?'pass':'fail'}"><i class="fas ${r.ok?'fa-check-circle':'fa-times-circle'}"></i><span class="flex-1 text-xs">Case ${i+1}: ${r.tc.i||'(none)'}</span></div>`).join('')}</div></div>${allOk?`<div class="text-center"><div class="text-xl mb-1">🎉</div><div class="text-primary font-bold">All Passed!</div><div class="text-accent code-font text-sm">+${p.xp} XP</div></div>`:'<div class="text-center text-rose-400 text-sm">Some cases failed. Try again!</div>'}`;}
+async function runDaily(){if(!window._de)return;const el=document.getElementById('dailyRes');const ch=DAILY[new Date().getDate()%DAILY.length],tc=ch.tc[0];el.innerHTML='<div class="output-panel"><div class="output-header text-primary"><i class="fas fa-spinner fa-spin"></i> Running...</div></div>';const r=await runCode(window._de.getValue(),ch.lang,tc.i);el.innerHTML=`<div class="output-panel"><div class="output-header text-primary"><i class="fas fa-terminal"></i> Output</div><div class="output-body" style="color:${r.err?'#f43f5e':'#4ade80'}">${r.err?fmtErr(r.err):(r.out||'(no output)')}</div></div>`;}
+async function submitDaily(){if(!window._de)return;const el=document.getElementById('dailyRes');const ch=DAILY[new Date().getDate()%DAILY.length];el.innerHTML='<div class="text-center py-6 text-gray-500"><i class="fas fa-spinner fa-spin text-xl mb-1"></i></div>';let pass=0;for(const tc of ch.tc){const r=await runCode(window._de.getValue(),ch.lang,tc.i);if(!r.err&&r.out.trim()===tc.o.trim())pass++;}const allOk=pass===ch.tc.length;if(allOk){addXP(ch.xp);save();}
+el.innerHTML=`<div class="glow-card p-4 mb-3"><h4 class="text-white font-semibold text-sm mb-2">Results: ${pass}/${ch.tc.length}</h4><div class="progress-bar"><div class="progress-fill" style="width:${pass/ch.tc.length*100}%;background:${allOk?'#00d4aa':'#f43f5e'}"></div></div></div>${allOk?'<div class="text-center text-primary font-bold">Challenge Complete! +'+ch.xp+' XP</div>':'<div class="text-center text-rose-400 text-sm">Not all passed. Keep trying!</div>'}`;}
+
+// ===== CHARTS =====
+function destroyCharts(){(window._charts||[]).forEach(c=>{try{c.destroy();}catch(e){}});window._charts=[];}
+function initDashCharts(){destroyCharts();const el=document.getElementById('dashChart');if(!el)return;const c=new Chart(el,{type:'doughnut',data:{labels:Object.keys(LM).map(k=>LM[k].name),datasets:[{data:Object.keys(LM).map(k=>langProg(k)),backgroundColor:Object.values(LM).map(m=>m.color),borderWidth:0,hoverOffset:6}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Space Grotesk',size:11},padding:10}}},cutout:'65%'}});window._charts.push(c);}
+function initProgCharts(){destroyCharts();const b=document.getElementById('progBar');if(b){const c=new Chart(b,{type:'bar',data:{labels:Object.keys(LM).map(k=>LM[k].name),datasets:[{data:Object.keys(LM).map(k=>langProg(k)),backgroundColor:Object.values(LM).map(m=>m.color),borderRadius:6,barThickness:35}]},options:{responsive:true,scales:{y:{beginAtZero:true,max:100,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#94a3b8',font:{family:'Space Grotesk',size:11}},grid:{display:false}}},plugins:{legend:{display:false}}}});window._charts.push(c);}
+const d=document.getElementById('progDonut');if(d){const tl=Object.values(LANGS).reduce((a,l)=>a+l.levels.reduce((b,v)=>b+v.lessons.length,0),0),tp=Object.values(PROBLEMS).reduce((a,p)=>a+p.length,0),tq=Object.values(QUIZZES).reduce((a,q)=>a+q.length,0);const c=new Chart(d,{type:'doughnut',data:{labels:['Lessons','Problems','Quizzes'],datasets:[{data:[Math.round(S.done.length/Math.max(tl,1)*100),Math.round(S.solved.length/Math.max(tp,1)*100),Math.round(Object.keys(S.quizScores).length/Math.max(tq,1)*100)],backgroundColor:['#00d4aa','#fbbf24','#a855f7'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Space Grotesk',size:11},padding:10}}},cutout:'60%'}});window._charts.push(c);}}
+
+// ===== HERO CANVAS =====
+function initHero(){const cv=document.getElementById('heroCanvas');if(!cv)return;const ctx=cv.getContext('2d');const p=cv.parentElement;function resize(){cv.width=p.offsetWidth;cv.height=p.offsetHeight;}resize();window.addEventListener('resize',resize);
+const chars='{}[]();=>+-*/%'.split('');const drops=Array.from({length:30},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,s:Math.random()*0.5+0.2,c:chars[Math.floor(Math.random()*chars.length)],o:Math.random()*0.3+0.1}));
+function draw(){ctx.clearRect(0,0,cv.width,cv.height);drops.forEach(d=>{ctx.fillStyle=`rgba(0,212,170,${d.o})`;ctx.font=`${12+d.s*4}px JetBrains Mono`;ctx.fillText(d.c,d.x,d.y);d.y+=d.s*0.8;if(d.y>cv.height){d.y=-20;d.x=Math.random()*cv.width;d.c=chars[Math.floor(Math.random()*chars.length)];}});requestAnimationFrame(draw);}draw();}
+
+// ===== SIDEBAR CLICKS =====
+document.getElementById('sidebarNav').addEventListener('click',function(e){const item=e.target.closest('.nav-item');if(item&&item.dataset.page)nav(item.dataset.page);});
+
+// ===== SEARCH =====
+document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();const q=prompt('Search:');if(q)nav('search',q);}});
+
+// ===== INIT =====
+load();updateSidebarUser();updateStreak();checkAch();nav('home');
+</script>
+</body>
+</html>
